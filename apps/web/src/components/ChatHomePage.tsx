@@ -9,6 +9,7 @@ import type { ApiResponse } from '@/types';
 type MessageKind =
   | 'assistant'
   | 'user-pill'
+  | 'quick-actions'
   | 'use-case-cards'
   | 'experience-cards'
   | 'model-cards'
@@ -55,6 +56,23 @@ const EXPERIENCE_LEVELS = [
   { value: 'developer',   label: 'Developer',         icon: '💻', sub: 'I can write code' },
   { value: 'researcher',  label: 'AI researcher',     icon: '🔬', sub: 'Deep technical knowledge' },
 ];
+
+const QUICK_ACTIONS = [
+  { value: 'writing',          label: 'Write content',      icon: '✍️',  iconBg: '#FFF3F0', special: false },
+  { value: 'vision',           label: 'Image Analysis',     icon: '🖼️',  iconBg: '#F5F0FF', special: false },
+  { value: 'real-time',        label: 'Real-time Apps',     icon: '⚡',  iconBg: '#FFFBF0', special: false },
+  { value: 'analysis',         label: 'Analyze Data',       icon: '📊',  iconBg: '#F0F8FF', special: false },
+  { value: 'coding',           label: 'Code Generation',    icon: '👨‍💻', iconBg: '#F0FFF4', special: false },
+  { value: 'research',         label: 'Summarize text',     icon: '📝',  iconBg: '#FFF0F5', special: false },
+  { value: 'writing',          label: 'Create slides',      icon: '🗂️',  iconBg: '#FFF8F0', special: false },
+  { value: 'research',         label: 'Mind Mapping',       icon: '🧠',  iconBg: '#F5F0FF', special: false },
+  { value: 'analysis',         label: 'Document Analysis',  icon: '📄',  iconBg: '#F5F5F5', special: false },
+  { value: 'customer-support', label: 'Customer Support',   icon: '🎧',  iconBg: '#FFF0F5', special: false },
+  { value: 'math',             label: 'Math & Science',     icon: '🧮',  iconBg: '#F0F8FF', special: false },
+  { value: 'research',         label: 'Research papers',    icon: '🔬',  iconBg: '#F0FFF4', special: false },
+  { value: 'writing',          label: 'Translate',          icon: '🌐',  iconBg: '#F0F8FF', special: false },
+  { value: 'exploring',        label: 'Just Exploring',     icon: '🔭',  iconBg: '#F5F4F0', special: true  },
+] as const;
 
 const BUDGET_LEVELS = [
   { value: 'low',    label: 'Budget-friendly', icon: '💰', sub: 'Cheapest options first' },
@@ -164,9 +182,9 @@ export function ChatHomePage() {
     {
       id: 'm0',
       kind: 'assistant',
-      text: `Hey! 👋 I'm <strong>NexusAI Hub</strong> — I'll help you find the perfect AI model for what you're building.<br/><br/>Let's start with a quick question:`,
+      text: `Hey! 👋 I'm <strong>NexusAI Hub</strong> — I'll help you find the perfect AI model for what you're building.<br/><br/>What would you like to work on today?`,
     },
-    { id: 'm1', kind: 'use-case-cards' },
+    { id: 'm1', kind: 'quick-actions' },
   ]);
 
   const [selectedUseCase, setSelectedUseCase]     = useState('');
@@ -189,6 +207,27 @@ export function ChatHomePage() {
   function addMessages(newMsgs: ChatMessage[]) {
     setMessages((prev) => [...prev, ...newMsgs]);
     scrollToBottom();
+  }
+
+  /* Quick action tile clicked */
+  function handleQuickAction(action: typeof QUICK_ACTIONS[number]) {
+    if (selectedUseCase) return;
+    if (action.value === 'exploring') {
+      window.location.href = '/marketplace';
+      return;
+    }
+    const uc = USE_CASES.find((u) => u.value === action.value) ?? USE_CASES[0];
+    setSelectedUseCase(uc.value);
+    addMessages([
+      { id: uid(), kind: 'user-pill', text: `${action.icon} ${action.label}` },
+      {
+        id: uid(),
+        kind: 'assistant',
+        text: `Perfect — <strong>"${action.label}"</strong>. That helps a lot! 💡<br/><br/>One more thing:`,
+      },
+      { id: uid(), kind: 'experience-cards' },
+    ]);
+    setStep(1);
   }
 
   /* Step 1 — use case selected */
@@ -365,6 +404,38 @@ export function ChatHomePage() {
             <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-[#E5E5E5]">
               <ThinkingDots />
             </div>
+          </div>
+        );
+
+      case 'quick-actions':
+        return (
+          <div key={msg.id} className="ml-11 max-w-2xl">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={`${action.value}-${action.label}`}
+                  type="button"
+                  onClick={() => handleQuickAction(action)}
+                  disabled={!!selectedUseCase}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-2xl border bg-white text-center transition group ${
+                    action.special
+                      ? 'border-dashed border-[#D1D5DB] hover:border-[#E8521A]'
+                      : 'border-[#E5E5E5] hover:border-[#E8521A] hover:shadow-sm'
+                  } ${selectedUseCase ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ backgroundColor: action.iconBg }}
+                  >
+                    {action.icon}
+                  </div>
+                  <span className="text-[11px] font-medium text-[#374151] leading-tight group-hover:text-[#E8521A] transition">
+                    {action.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-[#9CA3AF] mt-1 ml-1">NexusAI Hub · guided setup</p>
           </div>
         );
 
