@@ -1,7 +1,4 @@
-import { Suspense } from 'react';
-import { apiFetch } from '@/lib/api';
 import { AgentsPageClient } from '@/components/AgentsPageClient';
-import type { ApiResponse } from '@/types';
 
 interface AgentTemplate {
   id: string;
@@ -12,13 +9,14 @@ interface AgentTemplate {
   icon: string;
 }
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
 async function getTemplates(): Promise<AgentTemplate[]> {
   try {
-    const res = await apiFetch<ApiResponse<AgentTemplate[]>>(
-      '/api/v1/agents/templates',
-      { cache: 'no-store' },
-    );
-    return res.data;
+    const res = await fetch(`${API}/api/v1/agents/templates`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const json = await res.json() as { data: AgentTemplate[] };
+    return Array.isArray(json?.data) ? json.data : [];
   } catch {
     return [];
   }
@@ -37,17 +35,7 @@ export default async function AgentsPage() {
         </p>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-border h-52 skeleton" />
-            ))}
-          </div>
-        }
-      >
-        <AgentsPageClient templates={templates} />
-      </Suspense>
+      <AgentsPageClient templates={templates} />
     </div>
   );
 }

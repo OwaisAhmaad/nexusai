@@ -1,3 +1,5 @@
+'use client';
+
 import { ChatHomePage } from '@/components/ChatHomePage';
 
 export default function HomePage() {

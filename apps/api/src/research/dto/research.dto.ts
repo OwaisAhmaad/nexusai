@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsOptional, Min, Max, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateResearchDto {
@@ -16,6 +17,7 @@ export class CreateResearchDto {
   source: string;
 
   @ApiProperty({ example: 15 })
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(31)
@@ -29,12 +31,14 @@ export class CreateResearchDto {
 export class QueryResearchDto {
   @ApiProperty({ required: false, default: 1 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   page?: number;
 
   @ApiProperty({ required: false, default: 20 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(100)

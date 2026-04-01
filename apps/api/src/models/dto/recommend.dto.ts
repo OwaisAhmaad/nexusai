@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsIn, IsNumber, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RecommendDto {
@@ -37,6 +38,7 @@ export class RecommendDto {
     required: false,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   contextNeeded?: number;
