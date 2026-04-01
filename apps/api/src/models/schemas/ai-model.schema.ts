@@ -46,7 +46,18 @@ export class AiModel {
 
   @Prop({ default: 'active', enum: ['active', 'inactive'] })
   status: string;
+
+  // Recommendation metadata
+  @Prop({ type: [String], default: [] })
+  useCases: string[];
+
+  @Prop({ default: 'medium', enum: ['very-fast', 'fast', 'medium', 'slow'] })
+  speed: string;
+
+  @Prop()
+  bestFor?: string;
 }
 
 export const AiModelSchema = SchemaFactory.createForClass(AiModel);
 AiModelSchema.index({ name: 'text', description: 'text', lab: 'text' });
+AiModelSchema.index({ category: 1, isFeatured: 1, status: 1 });

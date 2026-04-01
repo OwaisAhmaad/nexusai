@@ -1,64 +1,52 @@
 import { Suspense } from 'react';
 import { apiFetch } from '@/lib/api';
-import { AgentCard } from '@/components/AgentCard';
-import type { ApiResponse, AgentTemplate } from '@/types';
+import { AgentsPageClient } from '@/components/AgentsPageClient';
+import type { ApiResponse } from '@/types';
 
-async function AgentsList() {
-  let agents: AgentTemplate[];
+interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  model: string;
+  tags: string[];
+  icon: string;
+}
+
+async function getTemplates(): Promise<AgentTemplate[]> {
   try {
     const res = await apiFetch<ApiResponse<AgentTemplate[]>>(
       '/api/v1/agents/templates',
       { cache: 'no-store' },
     );
-    agents = res.data;
+    return res.data;
   } catch {
-    return (
-      <div className="text-center py-20">
-        <p className="text-muted">Failed to load agents. Please try again.</p>
-      </div>
-    );
+    return [];
   }
-
-  if (!agents.length) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-2xl font-semibold text-text-primary mb-2">No agents yet</p>
-        <p className="text-muted">Agent templates will appear here.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {agents.map((agent) => (
-        <AgentCard key={agent.id} agent={agent} />
-      ))}
-    </div>
-  );
 }
 
-export default function AgentsPage() {
+export default async function AgentsPage() {
+  const templates = await getTemplates();
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary">AI Agents</h1>
+        <h1 className="text-3xl font-extrabold text-text-primary">AI Agents</h1>
         <p className="text-muted mt-2">
-          Pre-built agent templates powered by the best AI models.
+          Pre-built agent templates or create your own custom AI agent
         </p>
       </div>
+
       <Suspense
         fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-surface border border-border h-48 animate-pulse"
-              />
+              <div key={i} className="rounded-2xl border border-border h-52 skeleton" />
             ))}
           </div>
         }
       >
-        <AgentsList />
+        <AgentsPageClient templates={templates} />
       </Suspense>
     </div>
   );

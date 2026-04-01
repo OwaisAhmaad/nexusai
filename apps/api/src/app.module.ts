@@ -18,7 +18,19 @@ import { UploadModule } from './upload/upload.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGODB_URI', 'mongodb://localhost:27017/nexusai'),
+        uri: config.get<string>(
+          'MONGODB_URI',
+          'mongodb://localhost:27017/nexusai',
+        ),
+        connectionFactory: (connection: { on: (event: string, cb: () => void) => void }) => {
+          connection.on('connected', () =>
+            console.log('MongoDB connected'),
+          );
+          connection.on('error', () =>
+            console.error('MongoDB connection error'),
+          );
+          return connection;
+        },
       }),
     }),
     AuthModule,

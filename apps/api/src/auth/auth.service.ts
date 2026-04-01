@@ -93,8 +93,8 @@ export class AuthService {
     };
 
     const newAccessToken = this.jwtService.sign(newPayload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m'),
+      secret: this.config.get<string>('JWT_SECRET'),
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '15m'),
     });
 
     const newRefreshToken = this.jwtService.sign(newPayload, {
@@ -141,8 +141,8 @@ export class AuthService {
     const payload: JwtPayload = { ...tempPayload, sessionId };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m'),
+      secret: this.config.get<string>('JWT_SECRET'),
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '15m'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {

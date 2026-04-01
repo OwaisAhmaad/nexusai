@@ -23,7 +23,7 @@ export class UploadService {
         secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY', ''),
       },
     });
-    this.bucket = config.get<string>('AWS_S3_BUCKET', '');
+    this.bucket = config.get<string>('S3_BUCKET_NAME', '');
   }
 
   async getPresignedUrl(

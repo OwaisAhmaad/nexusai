@@ -23,21 +23,21 @@ export function NavLinks() {
           headers: { Authorization: `Bearer ${currentToken}` },
         });
       } catch {
-        // continue even if API call fails
+        // proceed regardless
       }
     }
     document.cookie = 'access_token=; path=/; max-age=0';
-    router.push('/auth/login');
+    router.push('/');
     router.refresh();
   }
 
   if (token) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="hidden md:flex items-center gap-2">
         <button
           type="button"
           onClick={handleLogout}
-          className="text-sm text-muted hover:text-text-primary transition font-medium"
+          className="px-3 py-2 rounded-lg text-sm text-muted hover:text-text-primary hover:bg-background transition font-medium"
         >
           Sign out
         </button>
@@ -46,18 +46,18 @@ export function NavLinks() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="hidden md:flex items-center gap-2">
       <Link
         href="/auth/login"
-        className="text-sm text-muted hover:text-text-primary transition font-medium"
+        className="px-3 py-2 rounded-lg text-sm text-muted hover:text-text-primary hover:bg-background transition font-medium"
       >
         Sign in
       </Link>
       <Link
         href="/auth/register"
-        className="bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-hover transition text-sm font-medium"
+        className="bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-hover transition text-sm font-semibold shadow-accent"
       >
-        Get started
+        Get started →
       </Link>
     </div>
   );

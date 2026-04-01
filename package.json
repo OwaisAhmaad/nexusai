@@ -3,12 +3,16 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
+    "dev": "concurrently \"npm run dev --workspace=apps/api\" \"npm run dev --workspace=apps/web\" --names \"api,web\" --prefix-colors \"magenta,cyan\"",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=packages/shared-types && npm run build --workspace=apps/api && npm run build --workspace=apps/web",
+    "seed": "npm run seed --workspace=apps/api",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "turbo": "^2.0.0",
     "typescript": "^5.3.3"
   },

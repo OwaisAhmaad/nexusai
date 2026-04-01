@@ -2,36 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
 :root {
   --accent: #E8521A;
+  --accent-hover: #d04415;
+  --accent-light: #fff0eb;
   --background: #F5F4F0;
   --surface: #FFFFFF;
   --text: #1A1A1A;
+  --text-secondary: #374151;
   --muted: #6B7280;
+  --muted-light: #9CA3AF;
   --border: #E5E5E5;
+  --border-hover: #D1D5DB;
 }
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--background);
   color: var(--text);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-* {
-  box-sizing: border-box;
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: #D1D5DB; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background-color: #9CA3AF; }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, #E8521A 0%, #f97316 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
-::-webkit-scrollbar-thumb {
-  background-color: #D1D5DB;
-  border-radius: 3px;
+/* Shimmer animation for skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0eeea 25%, #e8e6e2 50%, #f0eeea 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
 }

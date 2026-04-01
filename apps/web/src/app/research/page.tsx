@@ -12,23 +12,26 @@ async function ResearchFeed() {
     );
   } catch {
     return (
-      <div className="text-center py-20">
-        <p className="text-muted">Failed to load research. Please try again.</p>
+      <div className="text-center py-20 rounded-2xl border border-dashed border-border">
+        <p className="text-2xl mb-2">⚠️</p>
+        <p className="font-semibold text-text-primary">Couldn&apos;t load research</p>
+        <p className="text-sm text-muted mt-1">Make sure the API server is running</p>
       </div>
     );
   }
 
   if (!result.data.length) {
     return (
-      <div className="text-center py-20">
-        <p className="text-2xl font-semibold text-text-primary mb-2">No research items yet</p>
-        <p className="text-muted">Check back soon for the latest AI research.</p>
+      <div className="text-center py-20 rounded-2xl border border-dashed border-border">
+        <p className="text-3xl mb-3">📚</p>
+        <p className="font-semibold text-text-primary">No research items yet</p>
+        <p className="text-sm text-muted mt-1">Run the seed script to populate research data</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {result.data.map((item) => (
         <ResearchCard key={item.id} item={item} />
       ))}
@@ -38,21 +41,24 @@ async function ResearchFeed() {
 
 export default function ResearchPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-primary">AI Research</h1>
+        <div className="inline-flex items-center gap-2 bg-accent-light text-accent text-xs font-semibold px-3 py-1.5 rounded-full border border-accent/20 mb-4">
+          <span className="w-1.5 h-1.5 bg-accent rounded-full" />
+          AI Research Digest
+        </div>
+        <h1 className="text-3xl font-extrabold text-text-primary">Latest in AI</h1>
         <p className="text-muted mt-2">
-          Stay up to date with the latest breakthroughs in AI research.
+          Stay current with breakthroughs, new model releases, and research from top AI labs.
         </p>
       </div>
+
       <Suspense
         fallback={
-          <div className="space-y-4">
+          <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-surface border border-border h-28 animate-pulse"
-              />
+              <div key={i} className="rounded-2xl border border-border h-28 skeleton" />
             ))}
           </div>
         }

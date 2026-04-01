@@ -17,9 +17,9 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_ACCESS_SECRET', 'fallback-secret'),
+        secret: config.get<string>('JWT_SECRET', 'fallback-secret'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m'),
+          expiresIn: config.get<string>('JWT_EXPIRES_IN', '15m'),
         },
       }),
     }),

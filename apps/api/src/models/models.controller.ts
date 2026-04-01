@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ModelsService } from './models.service';
 import { CreateModelDto, UpdateModelDto, QueryModelDto } from './dto/model.dto';
+import { RecommendDto } from './dto/recommend.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -30,6 +31,15 @@ export class ModelsController {
   @ApiResponse({ status: 200, description: 'List of AI models' })
   async findAll(@Query() query: QueryModelDto) {
     return this.modelsService.findAll(query);
+  }
+
+  @Public()
+  @Post('recommend')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: 200, description: 'Model recommendations based on use case' })
+  async recommend(@Body() dto: RecommendDto) {
+    const data = await this.modelsService.recommend(dto);
+    return { data };
   }
 
   @Public()
