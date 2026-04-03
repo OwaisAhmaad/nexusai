@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import type { ApiResponse } from '@/types';
+import { ChatToolbar } from './ChatToolbar';
 
 /* ─── Types ─────────────────────────────────────────────── */
 type MessageKind =
@@ -733,70 +734,26 @@ export function ChatHomePage() {
 
       {/* Bottom input bar */}
       <div className="border-t border-[#E5E5E5] bg-white px-4 sm:px-8 lg:px-16 py-3">
-        <form onSubmit={handleChatSubmit}>
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-2 bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] px-4 py-2.5 focus-within:border-[#E8521A]/40 focus-within:ring-1 focus-within:ring-[#E8521A]/20 transition">
-              <input
-                ref={inputRef}
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Describe your project, ask a question, or just say hi — I'm here to help..."
-                className="flex-1 bg-transparent text-[13px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!chatInput.trim()}
-                className="w-8 h-8 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-                aria-label="Send message"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-
-            {/* Toolbar row */}
-            <div className="flex items-center justify-between mt-2 px-1">
-              <div className="flex items-center gap-1">
-                {[
-                  { icon: '🎙', label: 'Voice' },
-                  { icon: '↑', label: 'Upload' },
-                  { icon: '🖥', label: 'Screen' },
-                  { icon: '📋', label: 'Clipboard' },
-                  { icon: '📎', label: 'Attach' },
-                  { icon: '🖼', label: 'Image' },
-                  { icon: '+', label: 'More' },
-                ].map(({ icon, label }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#6B7280] hover:bg-[#F5F4F0] transition text-sm"
-                    aria-label={label}
-                    title={label}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/marketplace"
-                  className="flex items-center gap-1 text-[11px] text-[#6B7280] border border-[#E5E5E5] px-2.5 py-1 rounded-full hover:border-[#9CA3AF] transition"
-                >
-                  All models →
-                </Link>
-                <div className="flex items-center gap-1 text-[11px] text-[#6B7280] border border-[#E5E5E5] px-2.5 py-1 rounded-full cursor-pointer hover:border-[#9CA3AF] transition">
-                  {selectedModel?.name ?? 'GPT-5.4'}
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center gap-2 bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] px-4 py-2.5 focus-within:border-[#E8521A]/40 focus-within:ring-1 focus-within:ring-[#E8521A]/20 transition mb-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSubmit(e as unknown as FormEvent<HTMLFormElement>); } }}
+              placeholder="Click here and type anything — or just say hi..."
+              className="flex-1 bg-transparent text-[13px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none"
+            />
           </div>
-        </form>
+          <ChatToolbar
+            onTranscript={(t) => setChatInput(t)}
+            onFilesChange={() => {}}
+            chatInput={chatInput}
+            onSubmit={() => { const fakeEvent = { preventDefault: () => {} } as FormEvent<HTMLFormElement>; handleChatSubmit(fakeEvent); }}
+            selectedModelName={selectedModel?.name}
+          />
+        </div>
       </div>
     </div>
   );
