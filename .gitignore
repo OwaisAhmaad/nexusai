@@ -40,3 +40,6 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Personal developer scope — never commit
+CLAUDE.local.md
