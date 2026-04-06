@@ -393,7 +393,7 @@ export default function HomePage() {
             <form
               onSubmit={(e: FormEvent<HTMLFormElement>) => {
                 e.preventDefault();
-                startQuiz(textInput.trim() || undefined);
+                router.push('/chat-hub');
               }}
               className="max-w-2xl mx-auto mb-4"
             >
@@ -404,6 +404,7 @@ export default function HomePage() {
                     type="text"
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
+                    onFocus={() => router.push('/chat-hub')}
                     placeholder="Listening... speak now"
                     className="flex-1 text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none bg-transparent"
                   />
@@ -426,7 +427,7 @@ export default function HomePage() {
                   onAttachImage={(_, url) => console.log('image:', url)}
                   showAgentPill
                   submitLabel="Let's go"
-                  onSubmit={() => startQuiz(textInput.trim() || undefined)}
+                  onSubmit={() => router.push('/chat-hub')}
                 />
               </div>
             </form>

@@ -6,35 +6,79 @@ import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import type { ApiResponse, AuthTokens } from '@/types';
 
+const FEATURE_ITEMS = [
+  { icon: '🟣', text: '525+ AI models from 30+ labs'        },
+  { icon: '⚡', text: 'Custom agent builder with any model'  },
+  { icon: '🔗', text: 'Connect tools, memory & APIs'        },
+  { icon: '📊', text: 'Real-time analytics & monitoring'    },
+];
+
+const OAUTH_BUTTONS = [
+  {
+    key: 'google',
+    label: 'Google',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'github',
+    label: 'GitHub',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden="true">
+        <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'microsoft',
+    label: 'Microsoft',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+        <path d="M11.4 24H0V12.6h11.4V24z" fill="#F1511B"/>
+        <path d="M24 24H12.6V12.6H24V24z" fill="#80CC28"/>
+        <path d="M11.4 11.4H0V0h11.4v11.4z" fill="#00ADEF"/>
+        <path d="M24 11.4H12.6V0H24v11.4z" fill="#FBBC09"/>
+      </svg>
+    ),
+  },
+];
+
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [name, setName]           = useState('');
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [confirm, setConfirm]     = useState('');
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      setLoading(false);
+    if (password !== confirm) {
+      setError('Passwords do not match.');
       return;
     }
-
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    setLoading(true);
     try {
       const res = await apiFetch<ApiResponse<AuthTokens>>('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
       });
-
       if (res.data.accessToken) {
-        document.cookie = `access_token=${res.data.accessToken}; path=/; max-age=${15 * 60}; samesite=lax`;
+        localStorage.setItem('nexusai_token', res.data.accessToken);
+        document.cookie = `access_token=${encodeURIComponent(res.data.accessToken)}; path=/; max-age=900; samesite=lax`;
       }
-
       router.push('/marketplace');
       router.refresh();
     } catch (err) {
@@ -45,85 +89,126 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center mx-auto mb-3 shadow-accent">
-            <svg width="22" height="22" viewBox="0 0 18 18" fill="none">
-              <path d="M9 1L16 5V13L9 17L2 13V5L9 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-              <circle cx="9" cy="9" r="2.5" fill="white"/>
-            </svg>
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-[#F5F4F0] px-4 py-10">
+      <div className="flex w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+
+        {/* ── LEFT PANEL ── */}
+        <div className="hidden sm:flex flex-col w-72 flex-shrink-0 bg-[#1C1917] p-8 rounded-l-2xl">
+          {/* Logo */}
+          <div className="flex items-center gap-2 mb-auto">
+            <div className="bg-[#E8521A] rounded-lg w-8 h-8 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M9 1L16 5V13L9 17L2 13V5L9 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+                <circle cx="9" cy="9" r="2.5" fill="white"/>
+              </svg>
+            </div>
+            <span className="text-white font-black text-[15px]">NexusAI</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-text-primary">Create your account</h1>
-          <p className="text-muted text-sm mt-1">Free forever — no credit card required</p>
+
+          {/* Robot circle */}
+          <div className="w-32 h-32 rounded-full bg-[#2C2825] flex items-center justify-center text-7xl mx-auto my-6" aria-hidden="true">
+            🤖
+          </div>
+
+          <h2 className="font-black text-white text-xl leading-snug">
+            Build Smarter with AI Agents
+          </h2>
+          <p className="text-[#9CA3AF] text-sm mt-2 leading-relaxed">
+            Access 525+ models, create custom agents, and automate your workflow — all in one platform.
+          </p>
+
+          <ul className="mt-6 space-y-3">
+            {FEATURE_ITEMS.map((item) => (
+              <li key={item.text} className="flex items-center gap-2 text-[13px] text-[#D1D5DB]">
+                <span>{item.icon}</span>
+                <span>{item.text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="rounded-2xl bg-surface border border-border p-6 shadow-card">
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
-              <span className="text-base">⚠️</span>
-              <span>{error}</span>
-            </div>
-          )}
+        {/* ── RIGHT PANEL ── */}
+        <div className="flex-1 bg-white rounded-r-2xl sm:rounded-l-none rounded-2xl p-6 sm:p-8">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-xs font-semibold text-text-primary mb-1.5">
-                Full name
-              </label>
+          {/* Tabs */}
+          <div className="flex gap-6 border-b border-[#E5E5E5] mb-6">
+            <Link
+              href="/auth/login"
+              className="pb-2.5 text-[14px] font-semibold text-[#6B7280] hover:text-[#1A1A1A] transition"
+            >
+              Sign In
+            </Link>
+            <span className="pb-2.5 text-[14px] font-semibold text-[#1A1A1A] border-b-2 border-[#E8521A]">
+              Create Account
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-black text-[#1A1A1A]">Create your account</h2>
+          <p className="text-sm text-[#6B7280] mt-1 mb-6">Get started with NexusAI — it&apos;s free.</p>
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="mb-4">
+              <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">Full name</label>
               <input
-                id="name"
                 type="text"
+                placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete="name"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-                placeholder="John Doe"
+                className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:border-[#E8521A]/50 transition"
               />
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-text-primary mb-1.5">
-                Email address
-              </label>
+            <div className="mb-4">
+              <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">Email address</label>
               <input
-                id="email"
                 type="email"
+                placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-                placeholder="you@example.com"
+                className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:border-[#E8521A]/50 transition"
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-text-primary mb-1.5">
-                Password
-              </label>
+            <div className="mb-4">
+              <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">Password</label>
               <input
-                id="password"
                 type="password"
+                placeholder="Create a strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition"
-                placeholder="Min. 8 characters"
+                className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:border-[#E8521A]/50 transition"
               />
               {password.length > 0 && password.length < 8 && (
                 <p className="text-xs text-red-500 mt-1">Need {8 - password.length} more characters</p>
               )}
             </div>
 
+            <div className="mb-4">
+              <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">Confirm password</label>
+              <input
+                type="password"
+                placeholder="Confirm your password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] focus:outline-none focus:border-[#E8521A]/50 transition"
+              />
+            </div>
+
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-accent text-white px-4 py-3 rounded-xl hover:bg-accent-hover transition text-sm font-semibold shadow-accent disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+              className="w-full bg-[#E8521A] text-white rounded-xl py-2.5 font-bold text-[14px] hover:bg-[#d04415] transition disabled:opacity-60"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -131,21 +216,40 @@ export default function RegisterPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  Creating account...
+                  Creating account…
                 </span>
-              ) : (
-                'Create account →'
-              )}
+              ) : 'Create account'}
             </button>
           </form>
-        </div>
 
-        <p className="mt-5 text-center text-sm text-muted">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-accent hover:text-accent-hover font-semibold transition">
-            Sign in
-          </Link>
-        </p>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-[#E5E5E5]" />
+            <span className="text-[12px] text-[#9CA3AF] font-medium">Or continue with</span>
+            <div className="flex-1 h-px bg-[#E5E5E5]" />
+          </div>
+
+          {/* OAuth */}
+          <div className="flex gap-2">
+            {OAUTH_BUTTONS.map((btn) => (
+              <button
+                key={btn.key}
+                type="button"
+                className="flex-1 flex items-center justify-center gap-1.5 border border-[#E5E5E5] rounded-xl py-2.5 text-[13px] font-medium hover:bg-[#F5F4F0] transition text-[#374151]"
+              >
+                {btn.icon}
+                {btn.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-[13px] text-[#6B7280] text-center mt-4">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-[#E8521A] hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

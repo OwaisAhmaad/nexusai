@@ -4,34 +4,174 @@ import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import { MediaToolbar } from '@/components/MediaToolbar';
 
-/* ── Welcome tiles ─────────────────────────────────────────── */
+/* ── Static data ─────────────────────────────────────────────── */
+
 const WELCOME_TILES = [
-  { icon: '🔥', label: 'Write content',   sub: 'Emails, posts, stories',   task: 'writing'   },
-  { icon: '🎨', label: 'Create images',   sub: 'Art, photos, designs',     task: 'vision'    },
-  { icon: '🛠',  label: 'Build something', sub: 'Apps, tools, websites',    task: 'coding'    },
-  { icon: '⚡', label: 'Automate work',   sub: 'Save hours every week',    task: 'coding'    },
-  { icon: '📊', label: 'Analyse data',    sub: 'PDFs, sheets, reports',    task: 'analysis'  },
-  { icon: '🔍', label: 'Just exploring',  sub: 'Show me what\'s possible', task: 'general'   },
+  { icon: '✍️', label: 'Write content',   sub: 'Emails, posts, stories'   },
+  { icon: '🎨', label: 'Create images',   sub: 'Art, photos, designs'     },
+  { icon: '🛠️',  label: 'Build something', sub: 'Apps, tools, websites'    },
+  { icon: '⚡', label: 'Automate work',   sub: 'Save hours every week'    },
+  { icon: '📊', label: 'Analyse data',    sub: 'PDFs, sheets, reports'    },
+  { icon: '🔍', label: 'Just exploring',  sub: "Show me what's possible"  },
 ];
 
-/* ── Suggested prompts ─────────────────────────────────────── */
+const AUDIENCE_OPTIONS = [
+  { icon: '👤', label: 'Just me',         sub: 'Personal use'           },
+  { icon: '👥', label: 'My team',         sub: 'Small group, work'      },
+  { icon: '🏢', label: 'My company',      sub: 'Business/enterprise'    },
+  { icon: '🙋', label: 'My customers',    sub: 'Building for end-users' },
+  { icon: '🎓', label: 'Students',        sub: 'Education / learning'   },
+  { icon: '🌐', label: 'Anyone / public', sub: 'Open to the world'      },
+];
+
+const EXPERIENCE_OPTIONS = [
+  { icon: '😊', label: 'Complete beginner', sub: 'Never used AI before'     },
+  { icon: '🙂', label: 'Some experience',   sub: 'Used ChatGPT etc'         },
+  { icon: '💻', label: 'Developer',         sub: 'I can write code'         },
+  { icon: '🔬', label: 'AI researcher',     sub: 'Deep technical knowledge' },
+];
+
+const BUDGET_OPTIONS = [
+  { icon: '🆓', label: 'Free only',   sub: 'No credit card'           },
+  { icon: '💳', label: 'Pay as I go', sub: 'Small monthly costs OK'   },
+  { icon: '📋', label: 'Fixed plan',  sub: 'Predictable monthly bill' },
+  { icon: '🏢', label: 'Enterprise',  sub: 'Scale, SLAs, support'     },
+];
+
 const SUGGESTED_PROMPTS = [
   { icon: '🎯', text: 'Help me plan a SaaS product from idea to launch' },
   { icon: '💻', text: 'Write a REST API in Node.js with authentication' },
-  { icon: '📊', text: 'Analyze the pros and cons of GPT-5 vs Claude' },
+  { icon: '📊', text: 'Analyze the pros and cons of GPT-5 vs Claude'   },
   { icon: '✍️', text: 'Write a compelling LinkedIn post about AI trends' },
-  { icon: '🔬', text: 'Summarize the latest papers on multimodal AI' },
-  { icon: '🎨', text: 'Create a brand identity for a tech startup' },
+  { icon: '🔬', text: 'Summarize the latest papers on multimodal AI'   },
+  { icon: '🎨', text: 'Create a brand identity for a tech startup'     },
 ];
 
-/* ── Types ─────────────────────────────────────────────────── */
-interface OnboardingData {
-  task: string;
-  experience: string;
-  budget: string;
+const NAV_ACTIONS = [
+  { icon: '🛍️', label: 'Browse Marketplace',  href: '/marketplace' },
+  { icon: '🤖', label: 'Build an Agent',       href: '/agents'      },
+  { icon: '📖', label: 'How to use Guide',     href: '/research'    },
+  { icon: '📐', label: 'Prompt Engineering',   href: '/research'    },
+  { icon: '💰', label: 'View Pricing',         href: '/marketplace' },
+  { icon: '📊', label: 'AI Models Analysis',   href: '/marketplace' },
+];
+
+const CREATE_ACTIONS = [
+  { icon: '🎨', label: 'Create image'     },
+  { icon: '🎵', label: 'Generate Audio'   },
+  { icon: '🎬', label: 'Create video'     },
+  { icon: '📋', label: 'Create slides'    },
+  { icon: '📈', label: 'Create Infographs'},
+  { icon: '❓', label: 'Create quiz'      },
+  { icon: '🗂️', label: 'Create Flashcards'},
+  { icon: '🧠', label: 'Create Mind map'  },
+];
+
+const ANALYZE_ACTIONS = [
+  { icon: '📉', label: 'Analyze Data'       },
+  { icon: '✍️', label: 'Write content'      },
+  { icon: '💻', label: 'Code Generation'    },
+  { icon: '📄', label: 'Document Analysis'  },
+  { icon: '🌐', label: 'Translate'          },
+];
+
+const CHAT_PILLS = [
+  'Use cases', 'Monitor the situation', 'Create a prototype',
+  'Build a business plan', 'Create content', 'Analyze & research', 'Learn something',
+];
+
+interface Model {
+  name: string;
+  provider: 'OpenAI' | 'Anthropic' | 'Google';
 }
 
-type MsgKind = 'thinking' | 'assistant' | 'prompt-card' | 'user' | 'congrats';
+const MODELS: Model[] = [
+  { name: 'GPT-5',          provider: 'OpenAI'    },
+  { name: 'GPT-5.2',        provider: 'OpenAI'    },
+  { name: 'GPT-5 Turbo',    provider: 'OpenAI'    },
+  { name: 'GPT-4.5',        provider: 'OpenAI'    },
+  { name: 'GPT-4.1',        provider: 'OpenAI'    },
+  { name: 'GPT-4.1-mini',   provider: 'OpenAI'    },
+  { name: 'o3',             provider: 'OpenAI'    },
+  { name: 'o3-mini',        provider: 'OpenAI'    },
+  { name: 'o4-mini',        provider: 'OpenAI'    },
+  { name: 'Claude Opus 4.6',   provider: 'Anthropic' },
+  { name: 'Claude Opus 4.5',   provider: 'Anthropic' },
+  { name: 'Claude Opus 4',     provider: 'Anthropic' },
+  { name: 'Claude Sonnet 4.6', provider: 'Anthropic' },
+  { name: 'Claude Sonnet 4.5', provider: 'Anthropic' },
+  { name: 'Claude Sonnet 4',   provider: 'Anthropic' },
+  { name: 'Claude Haiku 4.5',  provider: 'Anthropic' },
+  { name: 'Claude Haiku 4',    provider: 'Anthropic' },
+  { name: 'Gemini 3.1 Pro',    provider: 'Google'    },
+  { name: 'Gemini 3 Pro',      provider: 'Google'    },
+  { name: 'Gemini 3 Flash',    provider: 'Google'    },
+  { name: 'Gemini 2.5 Pro',    provider: 'Google'    },
+  { name: 'Gemini 2.5 Flash',  provider: 'Google'    },
+  { name: 'Gemini 2.0 Flash',  provider: 'Google'    },
+];
+
+const PROVIDER_COLOR: Record<string, string> = {
+  OpenAI:    'bg-green-500',
+  Anthropic: 'bg-violet-500',
+  Google:    'bg-blue-500',
+};
+
+/* ── Prompt builder ──────────────────────────────────────────── */
+
+function buildPrompt(task: string, audience: string, exp: string, budget: string): string {
+  const roleMap: Record<string, string> = {
+    'Write content':   'professional content writer',
+    'Create images':   'creative visual designer',
+    'Build something': 'software developer',
+    'Automate work':   'workflow automation specialist',
+    'Analyse data':    'data analyst',
+    'Just exploring':  'helpful AI assistant',
+  };
+  const audienceMap: Record<string, string> = {
+    'Just me':         'my personal use',
+    'My team':         'a small team / group',
+    'My company':      'a business / enterprise',
+    'My customers':    'end-users / customers',
+    'Students':        'students / learning',
+    'Anyone / public': 'the general public',
+  };
+  const expMap: Record<string, string> = {
+    'Complete beginner': 'Please explain things clearly with no assumed technical knowledge.',
+    'Some experience':   'I have some experience with AI tools like ChatGPT.',
+    'Developer':         'I am a developer and comfortable with technical details.',
+    'AI researcher':     'I have deep technical knowledge of AI systems.',
+  };
+  const budgetMap: Record<string, string> = {
+    'Free only':   'Prioritise free or open-source solutions where possible.',
+    'Pay as I go': 'Small monthly costs are acceptable.',
+    'Fixed plan':  'I have a fixed monthly budget for tools.',
+    'Enterprise':  'Quality and scale matter most — cost is secondary.',
+  };
+
+  return `You are a ${roleMap[task] ?? 'helpful assistant'}. Help me with: ${task}.
+
+This is for ${audienceMap[audience] ?? 'personal use'}. ${expMap[exp] ?? ''}
+
+Please give a clear, structured response with practical steps I can act on immediately. ${budgetMap[budget] ?? ''}
+
+Start with a concise overview, then walk me through the most effective approach step by step.`;
+}
+
+/* ── Types ───────────────────────────────────────────────────── */
+
+type FlowStep = 'welcome' | 'audience' | 'experience' | 'budget' | 'prompt' | 'done';
+
+type MsgKind =
+  | 'thinking'
+  | 'assistant'
+  | 'bot-text'
+  | 'audience-card'
+  | 'experience-card'
+  | 'budget-card'
+  | 'prompt-card'
+  | 'user'
+  | 'congrats';
 
 interface ChatMsg {
   id: string;
@@ -41,87 +181,9 @@ interface ChatMsg {
   payload?: string;
 }
 
-interface Model {
-  name: string;
-  provider: 'OpenAI' | 'Anthropic' | 'Google';
-}
+/* ── Helpers ─────────────────────────────────────────────────── */
 
-/* ── Static models list ─────────────────────────────────────── */
-const MODELS: Model[] = [
-  // OpenAI
-  { name: 'GPT-5',         provider: 'OpenAI' },
-  { name: 'GPT-5.2',       provider: 'OpenAI' },
-  { name: 'GPT-5 Turbo',   provider: 'OpenAI' },
-  { name: 'GPT-4.5',       provider: 'OpenAI' },
-  { name: 'GPT-4.1',       provider: 'OpenAI' },
-  { name: 'GPT-4.1-mini',  provider: 'OpenAI' },
-  { name: 'o3',            provider: 'OpenAI' },
-  { name: 'o3-mini',       provider: 'OpenAI' },
-  { name: 'o4-mini',       provider: 'OpenAI' },
-  // Anthropic
-  { name: 'Claude Opus 4.6',    provider: 'Anthropic' },
-  { name: 'Claude Opus 4.5',    provider: 'Anthropic' },
-  { name: 'Claude Opus 4',      provider: 'Anthropic' },
-  { name: 'Claude Sonnet 4.6',  provider: 'Anthropic' },
-  { name: 'Claude Sonnet 4.5',  provider: 'Anthropic' },
-  { name: 'Claude Sonnet 4',    provider: 'Anthropic' },
-  { name: 'Claude Haiku 4.5',   provider: 'Anthropic' },
-  { name: 'Claude Haiku 4',     provider: 'Anthropic' },
-  // Google
-  { name: 'Gemini 3.1 Pro',  provider: 'Google' },
-  { name: 'Gemini 3 Pro',    provider: 'Google' },
-  { name: 'Gemini 3 Flash',  provider: 'Google' },
-  { name: 'Gemini 2.5 Pro',  provider: 'Google' },
-  { name: 'Gemini 2.5 Flash', provider: 'Google' },
-  { name: 'Gemini 2.0 Flash', provider: 'Google' },
-];
-
-const PROVIDER_COLOR: Record<string, string> = {
-  OpenAI:    'bg-green-500',
-  Anthropic: 'bg-violet-500',
-  Google:    'bg-blue-500',
-};
-
-/* ── Quick actions (right sidebar) ─────────────────────────── */
-const NAV_ACTIONS = [
-  { icon: '🛍️', label: 'Browse Marketplace',   href: '/marketplace' },
-  { icon: '🤖', label: 'Build an Agent',        href: '/agents' },
-  { icon: '📖', label: 'How to use Guide',      href: '/research' },
-  { icon: '📐', label: 'Prompt Engineering',    href: '/research' },
-  { icon: '💰', label: 'View Pricing',          href: '/marketplace' },
-  { icon: '📊', label: 'AI Models Analysis',    href: '/marketplace' },
-];
-
-const CREATE_ACTIONS = [
-  { icon: '🎨', label: 'Create image' },
-  { icon: '🎵', label: 'Generate Audio' },
-  { icon: '🎬', label: 'Create video' },
-  { icon: '📋', label: 'Create slides' },
-  { icon: '📈', label: 'Create Infographs' },
-  { icon: '❓', label: 'Create quiz' },
-  { icon: '🗂️', label: 'Create Flashcards' },
-  { icon: '🧠', label: 'Create Mind map' },
-];
-
-const ANALYZE_ACTIONS = [
-  { icon: '📉', label: 'Analyze Data' },
-  { icon: '✍️', label: 'Write content' },
-  { icon: '💻', label: 'Code Generation' },
-  { icon: '📄', label: 'Document Analysis' },
-  { icon: '🌐', label: 'Translate' },
-];
-
-const CHAT_PILLS = [
-  'Use cases', 'Monitor the situation', 'Create a prototype',
-  'Build a business plan', 'Create content', 'Analyze & research', 'Learn something',
-];
-
-/* ── Helpers ────────────────────────────────────────────────── */
 function uid() { return Math.random().toString(36).slice(2); }
-
-function generatePrompt(d: OnboardingData): string {
-  return `You are an expert AI assistant specialising in ${d.task}. My experience level is: ${d.experience}. Budget priority: ${d.budget}.\n\nHelp me get started with ${d.task}. Provide clear, actionable guidance tailored to my level. Start with the most impactful first steps and explain your reasoning.`;
-}
 
 function DiamondIcon() {
   return (
@@ -132,31 +194,42 @@ function DiamondIcon() {
   );
 }
 
-function ThinkingDots() {
+function OrangePill({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-1 py-1">
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="w-2 h-2 rounded-full bg-[#E8521A]/60 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-      ))}
+    <div className="inline-flex items-center gap-1 bg-[#FFF3EE] border border-[#E8521A] text-[#E8521A] rounded-full px-2.5 py-0.5 text-[11px] font-semibold mb-3">
+      + {label}
     </div>
   );
 }
 
-/* ── Page ───────────────────────────────────────────────────── */
+/* ── Page ────────────────────────────────────────────────────── */
+
 export default function ChatHubPage() {
-  const [messages, setMessages]         = useState<ChatMsg[]>([]);
-  const [onboarding, setOnboarding]     = useState<OnboardingData | null>(null);
-  const [hasOnboarding, setHasOnboarding] = useState(false);
-  const [activeModel, setActiveModel]   = useState('Claude Sonnet 4.6');
-  const [chatInput, setChatInput]       = useState('');
-  const [promptText, setPromptText]     = useState('');
-  const [promptDone, setPromptDone]     = useState(false);
-  const [searchQuery, setSearchQuery]   = useState('');
+  const [flowStep, setFlowStep]           = useState<FlowStep>('welcome');
+  const [task, setTask]                   = useState('');
+  const [audience, setAudience]           = useState('');
+  const [experience, setExperience]       = useState('');
+  const [budget, setBudget]               = useState('');
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [promptEditing, setPromptEditing] = useState(false);
+  const [promptVisible, setPromptVisible] = useState(true);
+  const [promptDone, setPromptDone]       = useState(false);
+
+  const [messages, setMessages]           = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput]         = useState('');
+  const [activeModel, setActiveModel]     = useState('Claude Sonnet 4.6');
+  const [searchQuery, setSearchQuery]     = useState('');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
-  const bottomRef  = useRef<HTMLDivElement>(null);
+
+  const bottomRef   = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* Close dropdown on outside click */
+  /* Scroll to bottom on new messages / step change */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, flowStep]);
+
+  /* Close model dropdown on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -167,53 +240,112 @@ export default function ChatHubPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showModelDropdown]);
 
-  /* Read sessionStorage + auto-play sequence */
-  useEffect(() => {
-    const raw = typeof window !== 'undefined' ? sessionStorage.getItem('nexusai_onboarding') : null;
+  /* ── Flow handlers ── */
 
-    if (!raw) {
-      // No onboarding data — show welcome card, no auto-play
-      setHasOnboarding(false);
-      return;
-    }
+  function handleTileClick(tileLabel: string) {
+    setTask(tileLabel);
+    setFlowStep('audience');
+    setMessages([
+      {
+        id: uid(), kind: 'bot-text',
+        text: `Great choice! 🎉 "${tileLabel}" — I can already think of some excellent models for that.\n\nNow, quick question:`,
+      },
+      { id: uid(), kind: 'audience-card', label: 'WHO IT\'S FOR' },
+    ]);
+  }
 
-    setHasOnboarding(true);
-    const d: OnboardingData = JSON.parse(raw) as OnboardingData;
-    setOnboarding(d);
-    const prompt = generatePrompt(d);
-    setPromptText(prompt);
+  function handleAudienceSelect(option: string) {
+    if (audience) return; // already selected
+    setAudience(option);
+    setFlowStep('experience');
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: uid(), kind: 'bot-text',
+        text: `Perfect — "${option}". That helps a lot! 💡\nOne more:`,
+      },
+      { id: uid(), kind: 'experience-card', label: 'YOUR EXPERIENCE' },
+    ]);
+  }
 
-    const t1 = setTimeout(() => {
-      setMessages([{ id: uid(), kind: 'thinking' }]);
-    }, 500);
+  function handleExperienceSelect(option: string) {
+    if (experience) return; // already selected
+    setExperience(option);
+    setFlowStep('budget');
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: uid(), kind: 'bot-text',
+        text: `Got it — "${option}". Almost there! 🚀\nLast question:`,
+      },
+      { id: uid(), kind: 'budget-card', label: 'YOUR BUDGET' },
+    ]);
+  }
 
-    const t2 = setTimeout(() => {
-      setMessages([
-        { id: uid(), kind: 'assistant', text: 'Generating your personalised AI prompt based on your answers…', label: 'Building prompt' },
-        { id: uid(), kind: 'prompt-card', payload: prompt, label: 'prompt ready' },
-      ]);
-    }, 2500);
+  function handleBudgetSelect(option: string) {
+    if (budget) return; // already selected
+    setBudget(option);
+    setFlowStep('prompt');
 
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+    const prompt = buildPrompt(task, audience, experience, option);
+    setGeneratedPrompt(prompt);
+    setPromptVisible(true);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Fire-and-forget API call
+    const useCaseMap: Record<string, string> = {
+      'Write content':   'writing',
+      'Create images':   'vision',
+      'Build something': 'coding',
+      'Automate work':   'coding',
+      'Analyse data':    'analysis',
+      'Just exploring':  'general',
+    };
+    const budgetMap: Record<string, string> = {
+      'Free only':   'low',
+      'Pay as I go': 'low',
+      'Fixed plan':  'medium',
+      'Enterprise':  'high',
+    };
+    const speedMap: Record<string, string> = {
+      'Complete beginner': 'fast',
+      'Some experience':   'balanced',
+      'Developer':         'any',
+      'AI researcher':     'any',
+    };
+    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1/models/recommend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        useCase: useCaseMap[task] ?? 'general',
+        budget:  budgetMap[option] ?? 'medium',
+        speed:   speedMap[experience] ?? 'any',
+      }),
+    }).catch(() => {});
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: uid(), kind: 'bot-text',
+        text: `Here's a personalised prompt crafted from your answers. You can run it as-is, edit it, regenerate a new version, or delete it and type your own. 🤖`,
+      },
+      { id: uid(), kind: 'prompt-card', label: 'prompt ready' },
+    ]);
+  }
 
   function handleRunPrompt() {
     if (promptDone) return;
     setPromptDone(true);
+    setFlowStep('done');
     setMessages((prev) => [
       ...prev,
-      { id: uid(), kind: 'user', text: promptText },
+      { id: uid(), kind: 'user', text: generatedPrompt },
     ]);
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         { id: uid(), kind: 'congrats' },
       ]);
-    }, 1200);
+    }, 1000);
   }
 
   function handleChatSend(e: FormEvent<HTMLFormElement>) {
@@ -225,17 +357,99 @@ export default function ChatHubPage() {
       ...prev,
       { id: uid(), kind: 'user', text: val },
       {
-        id: uid(),
-        kind: 'assistant',
+        id: uid(), kind: 'assistant',
         text: `Great question! I'm NexusAI Hub — your AI model advisor. Use the quick actions on the right or the chat to explore AI models. Visit the <a href="/marketplace" class="text-[#E8521A] underline underline-offset-2">Marketplace</a> to browse all models.`,
         label: 'model advisor',
       },
     ]);
   }
 
-  /* ── Render a message ── */
+  /* ── Render helpers ── */
+
+  function BotRow({ text, label }: { text: string; label?: string }) {
+    return (
+      <div className="flex items-start gap-3 max-w-lg">
+        <div className="w-7 h-7 rounded-full bg-[#FFF3EE] border border-[#E8521A]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <DiamondIcon />
+        </div>
+        <div>
+          <p className="text-[14px] text-[#1A1A1A] leading-relaxed whitespace-pre-line">{text}</p>
+          {label && <p className="text-[11px] italic text-[#9CA3AF] mt-1">NexusAI Hub · {label}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  function OptionGrid({
+    options,
+    cols,
+    selected,
+    onSelect,
+    disabled,
+  }: {
+    options: { icon: string; label: string; sub: string }[];
+    cols: 2 | 3;
+    selected: string;
+    onSelect: (label: string) => void;
+    disabled: boolean;
+  }) {
+    return (
+      <div className={`grid gap-2 ${cols === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        {options.map((opt) => {
+          const isSelected = selected === opt.label;
+          return (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => !disabled && onSelect(opt.label)}
+              disabled={disabled && !isSelected}
+              className={`flex flex-col gap-1 p-3.5 rounded-xl border text-left transition ${
+                isSelected
+                  ? 'border-2 border-[#E8521A] bg-[#FFF3EE]'
+                  : disabled
+                  ? 'border border-[#E5E5E5] bg-[#F9F9F9] opacity-40 cursor-default'
+                  : 'border border-[#E5E5E5] bg-white hover:border-[#E8521A] hover:bg-[#FFF8F5] cursor-pointer'
+              }`}
+            >
+              <span className="text-xl">{opt.icon}</span>
+              <span className={`text-[12px] font-semibold leading-tight ${isSelected ? 'text-[#E8521A]' : 'text-[#1A1A1A]'}`}>{opt.label}</span>
+              <span className="text-[10px] text-[#9CA3AF] leading-tight">{opt.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function StepCard({
+    pill,
+    title,
+    subtitle,
+    footer,
+    children,
+  }: {
+    pill: string;
+    title: string;
+    subtitle: string;
+    footer: string;
+    children: React.ReactNode;
+  }) {
+    return (
+      <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 max-w-[520px]">
+        <OrangePill label={pill} />
+        <h3 className="text-[15px] font-bold text-[#1A1A1A] mb-1">{title}</h3>
+        <p className="text-[12px] text-[#6B7280] mb-4">{subtitle}</p>
+        {children}
+        <p className="text-[11px] italic text-[#9CA3AF] mt-3">{footer}</p>
+      </div>
+    );
+  }
+
+  /* ── Message renderer ── */
+
   function renderMsg(msg: ChatMsg) {
     switch (msg.kind) {
+
       case 'thinking':
         return (
           <div key={msg.id} className="flex items-start gap-3">
@@ -243,8 +457,138 @@ export default function ChatHubPage() {
               <DiamondIcon />
             </div>
             <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 border border-[#E5E5E5] shadow-sm">
-              <ThinkingDots />
+              <div className="flex items-center gap-1 py-1">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="w-2 h-2 rounded-full bg-[#E8521A]/60 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </div>
             </div>
+          </div>
+        );
+
+      case 'bot-text':
+        return (
+          <div key={msg.id} className="flex items-start gap-3 max-w-lg">
+            <div className="w-7 h-7 rounded-full bg-[#FFF3EE] border border-[#E8521A]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <DiamondIcon />
+            </div>
+            <p className="text-[14px] text-[#1A1A1A] leading-relaxed whitespace-pre-line pt-1">{msg.text}</p>
+          </div>
+        );
+
+      case 'audience-card':
+        return (
+          <div key={msg.id}>
+            <StepCard
+              pill="WHO IT'S FOR"
+              title="Who will be using this AI?"
+              subtitle="This helps match the right tool style"
+              footer="NexusAI Hub · guided setup"
+            >
+              <OptionGrid
+                options={AUDIENCE_OPTIONS}
+                cols={2}
+                selected={audience}
+                onSelect={handleAudienceSelect}
+                disabled={!!audience}
+              />
+            </StepCard>
+          </div>
+        );
+
+      case 'experience-card':
+        return (
+          <div key={msg.id}>
+            <StepCard
+              pill="YOUR EXPERIENCE"
+              title="How comfortable are you with tech / AI?"
+              subtitle="Totally fine to be brand new — that's what I'm here for!"
+              footer="NexusAI Hub · guided setup"
+            >
+              <OptionGrid
+                options={EXPERIENCE_OPTIONS}
+                cols={2}
+                selected={experience}
+                onSelect={handleExperienceSelect}
+                disabled={!!experience}
+              />
+            </StepCard>
+          </div>
+        );
+
+      case 'budget-card':
+        return (
+          <div key={msg.id}>
+            <StepCard
+              pill="YOUR BUDGET"
+              title="What's your budget?"
+              subtitle="I'll only show you what fits"
+              footer="NexusAI Hub · guided setup"
+            >
+              <OptionGrid
+                options={BUDGET_OPTIONS}
+                cols={2}
+                selected={budget}
+                onSelect={handleBudgetSelect}
+                disabled={!!budget}
+              />
+            </StepCard>
+          </div>
+        );
+
+      case 'prompt-card':
+        if (!promptVisible) return null;
+        return (
+          <div key={msg.id} className="max-w-[520px]">
+            <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5">
+              <OrangePill label="YOUR AI PROMPT" />
+              <div className="bg-[#F5F4F0] rounded-xl p-4 mb-4">
+                {promptEditing ? (
+                  <textarea
+                    value={generatedPrompt}
+                    onChange={(e) => setGeneratedPrompt(e.target.value)}
+                    className="w-full bg-transparent text-[13px] text-[#374151] leading-relaxed resize-none focus:outline-none min-h-[140px]"
+                  />
+                ) : (
+                  <p className="text-[13px] text-[#374151] leading-relaxed whitespace-pre-line">{generatedPrompt}</p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleRunPrompt}
+                  disabled={promptDone}
+                  className="flex items-center gap-1.5 bg-[#E8521A] text-white text-[12px] font-semibold px-4 py-2 rounded-lg hover:bg-[#d04415] transition disabled:opacity-40"
+                >
+                  ▶ Run prompt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPromptEditing((v) => !v)}
+                  className="flex items-center gap-1.5 border border-[#1A1A1A] text-[#1A1A1A] bg-white text-[12px] px-3 py-2 rounded-lg hover:bg-[#F5F4F0] transition"
+                >
+                  — Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromptEditing(false);
+                    setGeneratedPrompt(buildPrompt(task, audience, experience, budget));
+                  }}
+                  className="flex items-center gap-1.5 border border-[#3B82F6] text-[#3B82F6] bg-white text-[12px] px-3 py-2 rounded-lg hover:bg-blue-50 transition"
+                >
+                  ↻ Regenerate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPromptVisible(false)}
+                  className="flex items-center gap-1.5 border border-[#E5E5E5] text-[#6B7280] bg-white text-[12px] px-3 py-2 rounded-lg hover:border-[#1A1A1A] transition"
+                >
+                  ✕ Delete
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] italic text-[#9CA3AF] mt-1 ml-1">NexusHub · {msg.label}</p>
           </div>
         );
 
@@ -263,47 +607,17 @@ export default function ChatHubPage() {
           </div>
         );
 
-      case 'prompt-card':
-        return (
-          <div key={msg.id} className="flex items-start gap-3 max-w-lg">
-            <div className="w-7 h-7 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <DiamondIcon />
-            </div>
-            <div className="flex-1">
-              <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm p-4">
-                <div className="flex items-center gap-1.5 mb-3">
-                  <span className="text-[#E8521A] text-xs">✦</span>
-                  <span className="text-[11px] font-bold text-[#E8521A] uppercase tracking-wider">Your AI Prompt</span>
-                </div>
-                <div className="bg-[#F5F4F0] rounded-xl p-3 mb-4">
-                  <p className="text-[12px] text-[#374151] leading-relaxed whitespace-pre-line">{msg.payload}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleRunPrompt}
-                    disabled={promptDone}
-                    className="flex items-center gap-1.5 bg-[#E8521A] text-white text-[12px] font-semibold px-3 py-1.5 rounded-full hover:bg-[#d04415] transition disabled:opacity-40"
-                  >
-                    ▶ Run prompt
-                  </button>
-                  {[{ icon: '✎', label: 'Edit' }, { icon: '↻', label: 'Regenerate' }, { icon: '✕', label: 'Delete' }].map(({ icon, label }) => (
-                    <button key={label} type="button" className="flex items-center gap-1 border border-[#E5E5E5] text-[#6B7280] text-[12px] px-3 py-1.5 rounded-full hover:border-[#1A1A1A] transition">
-                      {icon} {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1 ml-1">NexusHub · {msg.label}</p>
-            </div>
-          </div>
-        );
-
       case 'user':
         return (
-          <div key={msg.id} className="flex justify-end">
-            <div className="bg-[#E8521A] text-white text-[13px] font-medium px-4 py-2.5 rounded-2xl rounded-tr-sm shadow-sm max-w-sm">
+          <div key={msg.id} className="flex justify-end items-start gap-2">
+            <div
+              className="bg-[#E8521A] text-white text-[13px] font-medium px-4 py-2.5 shadow-sm max-w-[70%] whitespace-pre-line"
+              style={{ borderRadius: '18px 18px 4px 18px' }}
+            >
               {msg.text}
+            </div>
+            <div className="w-7 h-7 rounded-full bg-[#E8521A] flex items-center justify-center flex-shrink-0 text-white text-[11px] font-bold mt-0.5">
+              U
             </div>
           </div>
         );
@@ -318,19 +632,19 @@ export default function ChatHubPage() {
               <div className="bg-[#F0FDF4] rounded-2xl border border-[#86EFAC] p-4">
                 <p className="text-[14px] font-bold text-[#15803D] mb-1">🎓 Congratulations — you just sent your first AI prompt!</p>
                 <p className="text-[12px] text-[#166534] mb-3">You now know how to guide AI to get focused, useful results.</p>
-                <div className="bg-white rounded-xl p-3 border border-[#BBF7D0]">
+                <div className="bg-[#DCFCE7] rounded-xl p-3 border border-[#BBF7D0] mb-3">
                   <p className="text-[12px] text-[#15803D] font-medium">
                     💡 <strong>What&apos;s next: Explore AI Models</strong> — Now I&apos;ll introduce you to the models that can help with your specific goal.
                   </p>
                 </div>
                 <Link
                   href="/marketplace"
-                  className="mt-3 inline-flex items-center gap-1.5 bg-[#E8521A] text-white text-[12px] font-bold px-4 py-2 rounded-full hover:bg-[#d04415] transition"
+                  className="inline-flex items-center gap-1.5 bg-[#E8521A] text-white text-[12px] font-bold px-4 py-2 rounded-full hover:bg-[#d04415] transition"
                 >
                   Explore Models →
                 </Link>
               </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1 ml-1">NexusHub · milestone reached 🎉</p>
+              <p className="text-[11px] italic text-[#9CA3AF] mt-1 ml-1">NexusHub · milestone reached 🎉</p>
             </div>
           </div>
         );
@@ -340,21 +654,22 @@ export default function ChatHubPage() {
     }
   }
 
-  /* ── Filtered models (sidebar search) ── */
+  /* ── Sidebar helpers ── */
+
   const filteredModels = MODELS.filter(
     (m) =>
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.provider.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  /* ── Models grouped by provider (for input-bar dropdown) ── */
   const providers = ['OpenAI', 'Anthropic', 'Google'] as const;
 
   /* ── Layout ── */
+
   return (
     <div className="flex h-[calc(100vh-64px)] bg-[#F5F4F0] overflow-hidden">
 
-      {/* ── Left sidebar — Models list ── */}
+      {/* Left sidebar — Models list */}
       <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 bg-white border-r border-[#E5E5E5] overflow-hidden">
         <div className="px-4 py-3 border-b border-[#F0EEE9]">
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">AI Models</p>
@@ -387,16 +702,17 @@ export default function ChatHubPage() {
         </div>
       </aside>
 
-      {/* ── Center — Chat ── */}
+      {/* Center — Chat */}
       <div className="flex-1 flex flex-col min-w-0">
+
         {/* Chat header */}
         <div className="bg-white border-b border-[#E5E5E5] px-5 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <DiamondIcon />
             <span className="text-[14px] font-bold text-[#1A1A1A]">NexusAI Hub</span>
-            {onboarding && (
+            {task && (
               <span className="text-[11px] text-[#6B7280] bg-[#F5F4F0] px-2 py-0.5 rounded-full">
-                {onboarding.task}
+                {task}
               </span>
             )}
           </div>
@@ -407,8 +723,9 @@ export default function ChatHubPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 flex flex-col">
-          {messages.length === 0 && !hasOnboarding ? (
-            /* Welcome card — shown when navigating directly to /chat-hub */
+
+          {/* Welcome card — shown until a tile is clicked */}
+          {flowStep === 'welcome' && (
             <div className="flex-1 flex items-center justify-center">
               <div className="bg-white rounded-3xl border border-[#E5E5E5] shadow-sm p-8 max-w-lg w-full text-center">
                 <div className="w-10 h-10 rounded-full border-2 border-[#E5E5E5] flex items-center justify-center mx-auto mb-4">
@@ -418,20 +735,16 @@ export default function ChatHubPage() {
                 <p className="text-[#6B7280] text-[14px] leading-relaxed mb-6">
                   No tech background needed. Tell me what you&apos;d like to <strong>achieve</strong> — I&apos;ll help you discover what&apos;s possible, step by step.
                 </p>
-                {/* Task tiles */}
                 <div className="bg-[#FFF8F5] rounded-2xl border border-[#E8521A]/20 p-4 mb-4">
                   <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-wider mb-3">
-                    ✦ What would you like to do today?
+                    🔥 WHAT WOULD YOU LIKE TO DO TODAY?
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     {WELCOME_TILES.map((tile) => (
                       <button
                         key={tile.label}
                         type="button"
-                        onClick={() => {
-                          sessionStorage.setItem('nexusai_onboarding', JSON.stringify({ task: tile.label, experience: 'Some experience', budget: 'Balanced' }));
-                          window.location.reload();
-                        }}
+                        onClick={() => handleTileClick(tile.label)}
                         className="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-[#E5E5E5] hover:border-[#E8521A] hover:shadow-sm transition text-center"
                       >
                         <span className="text-2xl">{tile.icon}</span>
@@ -444,17 +757,19 @@ export default function ChatHubPage() {
                 <p className="text-[12px] text-[#9CA3AF]">Or type anything below — there are no wrong answers ↓</p>
               </div>
             </div>
-          ) : (
-            messages.map(renderMsg)
           )}
+
+          {/* Flow messages */}
+          {messages.map(renderMsg)}
+
           <div ref={bottomRef} />
         </div>
 
         {/* Input area */}
         <div className="bg-white border-t border-[#E5E5E5] px-4 py-3 flex-shrink-0">
 
-          {/* Suggested prompts — shown only at the start of a conversation */}
-          {messages.length <= 2 && (
+          {/* Suggested prompts — shown only at the start */}
+          {messages.length <= 2 && flowStep !== 'welcome' && (
             <div className="mb-3">
               <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Suggested prompts</p>
               <div className="grid grid-cols-2 gap-2">
@@ -489,7 +804,6 @@ export default function ChatHubPage() {
 
           <form onSubmit={handleChatSend}>
             <div className="bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] focus-within:border-[#E8521A]/40 transition overflow-hidden">
-              {/* Input row */}
               <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
                 {/* Model selector */}
                 <div className="relative flex-shrink-0" ref={dropdownRef}>
@@ -534,7 +848,7 @@ export default function ChatHubPage() {
                   className="flex-1 bg-transparent text-[13px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none"
                 />
               </div>
-              {/* Media toolbar */}
+
               <div className="border-t border-[#E5E5E5]/60">
                 <MediaToolbar
                   onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
@@ -545,7 +859,6 @@ export default function ChatHubPage() {
                   onSubmit={undefined}
                   submitDisabled={!chatInput.trim()}
                 />
-                {/* Send button row */}
                 <div className="flex justify-end px-3 pb-2">
                   <button
                     type="submit"
@@ -563,7 +876,7 @@ export default function ChatHubPage() {
         </div>
       </div>
 
-      {/* ── Right sidebar — Quick Actions ── */}
+      {/* Right sidebar — Quick Actions */}
       <aside className="hidden xl:flex flex-col w-[260px] flex-shrink-0 bg-white border-l border-[#E5E5E5] overflow-y-auto">
         <div className="p-4">
 
