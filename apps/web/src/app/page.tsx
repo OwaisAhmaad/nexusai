@@ -1,5 +1,6 @@
 import { ChatHomePage } from '@/components/ChatHomePage';
 import { HomeSections } from '@/components/HomeSections';
+import { HeroSection } from '@/components/HeroSection';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -17,7 +18,15 @@ export default async function HomePage() {
   const models = await getModels();
   return (
     <>
-      <ChatHomePage />
+      {/* Hero — landing section */}
+      <HeroSection />
+
+      {/* AI Advisor chat — scroll target */}
+      <section id="advisor">
+        <ChatHomePage />
+      </section>
+
+      {/* Marketing sections */}
       <HomeSections models={models} />
     </>
   );

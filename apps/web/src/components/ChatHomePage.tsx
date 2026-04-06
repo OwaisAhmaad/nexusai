@@ -712,7 +712,7 @@ export function ChatHomePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-[#F5F4F0]">
+    <div className="flex flex-col h-[720px] bg-[#F5F4F0] border-t border-[#E5E5E5]">
       {/* Proceed-with-model sticky banner */}
       {selectedModel && (
         <div className="sticky top-0 z-10 flex justify-end px-4 py-2 bg-[#F5F4F0]/90 backdrop-blur-sm border-b border-[#E5E5E5]">

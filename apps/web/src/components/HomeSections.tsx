@@ -475,7 +475,7 @@ export function HomeSections({ models }: { models: ModelItem[] }) {
           </p>
           <button
             type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => document.getElementById('advisor')?.scrollIntoView({ behavior: 'smooth' })}
             className="bg-[#E8521A] text-white font-bold px-8 py-3 rounded-full hover:bg-[#d04415] transition shadow-md"
           >
             Talk to NexusAI Hub ✦

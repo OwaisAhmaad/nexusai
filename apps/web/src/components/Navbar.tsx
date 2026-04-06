@@ -21,6 +21,7 @@ export function Navbar() {
         <nav className="hidden md:flex items-center gap-1">
           {[
             { href: '/', label: 'Home' },
+            { href: '/#advisor', label: 'AI Advisor' },
             { href: '/marketplace', label: 'Marketplace' },
             { href: '/agents', label: 'Agents' },
             { href: '/research', label: 'Research' },

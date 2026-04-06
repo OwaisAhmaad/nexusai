@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AgentCard } from './AgentCard';
 import { CreateAgentModal } from './CreateAgentModal';
+import Link from 'next/link';
 
 interface AgentTemplate {
   id: string;
@@ -17,13 +19,37 @@ interface AgentsPageClientProps {
   templates: AgentTemplate[];
 }
 
+function getToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export function AgentsPageClient({ templates }: AgentsPageClientProps) {
+  const router = useRouter();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
 
+  function requireAuth(action: () => void) {
+    if (!getToken()) {
+      router.push('/auth/login');
+      return;
+    }
+    action();
+  }
+
   function handleUseTemplate(template: AgentTemplate) {
-    setSelectedTemplate(template);
-    setShowCreateModal(true);
+    requireAuth(() => {
+      setSelectedTemplate(template);
+      setShowCreateModal(true);
+    });
+  }
+
+  function handleCreate() {
+    requireAuth(() => {
+      setSelectedTemplate(null);
+      setShowCreateModal(true);
+    });
   }
 
   return (
@@ -33,12 +59,12 @@ export function AgentsPageClient({ templates }: AgentsPageClientProps) {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-text-primary">Agent Templates</h2>
-            <p className="text-sm text-muted mt-0.5">Start fast with a pre-built template</p>
+            <p className="text-sm text-muted mt-0.5">Start fast with a pre-built template — <Link href="/auth/login" className="text-[#E8521A] hover:underline">sign in</Link> to create your own</p>
           </div>
           <button
             type="button"
-            onClick={() => { setSelectedTemplate(null); setShowCreateModal(true); }}
-            className="bg-accent text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-accent-hover transition shadow-accent flex items-center gap-2"
+            onClick={handleCreate}
+            className="bg-[#E8521A] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#d04415] transition flex items-center gap-2"
           >
             <span className="text-lg leading-none">+</span>
             Create agent
@@ -59,6 +85,7 @@ export function AgentsPageClient({ templates }: AgentsPageClientProps) {
                 agent={template}
                 onUse={() => handleUseTemplate(template)}
               />
+
             ))}
           </div>
         )}

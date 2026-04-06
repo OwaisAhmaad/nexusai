@@ -29,6 +29,7 @@ export function MobileNav() {
         <div className="absolute top-16 left-0 right-0 bg-white border-b border-border px-4 py-3 space-y-1 shadow-lg">
           {[
             { href: '/', label: 'Home' },
+            { href: '/#advisor', label: 'AI Advisor' },
             { href: '/marketplace', label: 'Marketplace' },
             { href: '/agents', label: 'Agents' },
             { href: '/research', label: 'Research' },
