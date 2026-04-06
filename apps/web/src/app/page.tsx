@@ -25,6 +25,42 @@ const SUGGESTED_PILLS = [
   { label: 'Analyze data',       icon: '📊',  color: 'bg-amber-50  text-amber-700  border-amber-200'  },
 ];
 
+const TAB_SUGGESTIONS: Record<string, string[]> = {
+  'Recruiting': [
+    'Monitor job postings at target companies',
+    'Benchmark salary for a specific role',
+    'Build a hiring pipeline tracker',
+    'Research a candidate before an interview',
+    'Build an interactive talent market map',
+  ],
+  'Create a prototype': [
+    'Build a space exploration timeline app',
+    'Create a real-time stock market tracker',
+    'Prototype an AI chatbot demo application',
+    'Create a project management Kanban board',
+  ],
+  'Build a business': [
+    'Write a business plan for my SaaS idea',
+    'Analyse my target market and competitors',
+    'Create financial projections for Year 1',
+    'Draft investor pitch deck outline',
+  ],
+  'Help me learn': [
+    'Explain machine learning in plain English',
+    'Create a 30-day Python learning plan',
+    'Summarise this research paper for me',
+    'Quiz me on JavaScript fundamentals',
+  ],
+  'Research': [
+    'Summarise the latest AI research papers',
+    'Compare GPT-5 vs Claude Opus 4.6',
+    'Find open-source alternatives to Notion',
+    'Research market size for AI tools',
+  ],
+};
+
+const TAB_PILLS = ['Recruiting', 'Create a prototype', 'Build a business', 'Help me learn', 'Research'];
+
 const TASK_ICONS = [
   { label: 'Create image',       icon: '🎨', href: null },
   { label: 'Generate Audio',     icon: '🎵', href: null },
@@ -158,6 +194,7 @@ export default function HomePage() {
   const [textInput, setTextInput]           = useState('');
   const [email, setEmail]                   = useState('');
   const [data, setData]                     = useState<Partial<OnboardingData>>({});
+  const [activeTab, setActiveTab]           = useState('Recruiting');
 
   /* Open quiz */
   function startQuiz(task?: string) {
@@ -371,10 +408,56 @@ export default function HomePage() {
                   type="submit"
                   className="bg-[#E8521A] text-white px-5 py-2 rounded-full font-bold text-[13px] hover:bg-[#d04415] transition whitespace-nowrap flex-shrink-0"
                 >
-                  Find my model →
+                  🔍 Let&apos;s go
                 </button>
               </div>
             </form>
+
+            {/* Tab pills + suggestions */}
+            <div className="max-w-2xl mx-auto mb-6">
+              <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden">
+                {/* Tab bar */}
+                <div className="flex border-b border-[#E5E5E5] overflow-x-auto scrollbar-hide">
+                  {TAB_PILLS.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className={`flex-shrink-0 px-4 py-2.5 text-[13px] font-semibold transition whitespace-nowrap ${
+                        activeTab === tab
+                          ? 'bg-[#1A1A1A] text-white'
+                          : 'text-[#6B7280] hover:text-[#1A1A1A] hover:bg-[#F5F4F0]'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                {/* Suggestions list */}
+                <div className="py-1">
+                  {(TAB_SUGGESTIONS[activeTab] ?? []).map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setTextInput(suggestion)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F5F4F0] transition text-left"
+                    >
+                      <svg className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                      </svg>
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+                {/* Footer hint */}
+                <div className="border-t border-[#F5F4F0] px-4 py-2 flex items-center gap-1.5">
+                  <svg className="w-3 h-3 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                  </svg>
+                  <span className="text-[11px] text-[#9CA3AF]">Click any suggestion to fill the search box, then press <strong>Let&apos;s go</strong></span>
+                </div>
+              </div>
+            </div>
 
             {/* Suggested pills */}
             <div className="flex flex-wrap gap-2 justify-center mb-8">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { AuthModal } from '@/components/AuthModal';
 
 interface UserProfile {
   id: string;
@@ -32,6 +33,8 @@ export function NavLinks() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [open, setOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<'signin' | 'register'>('signin');
 
   useEffect(() => {
     const token = getToken();
@@ -146,19 +149,32 @@ export function NavLinks() {
 
   /* ── Logged out — sign in / get started ── */
   return (
-    <div className="hidden md:flex items-center gap-2">
-      <Link
-        href="/auth/login"
-        className="px-3 py-2 rounded-lg text-sm text-muted hover:text-text-primary hover:bg-background transition font-medium"
-      >
-        Sign in
-      </Link>
-      <Link
-        href="/auth/register"
-        className="bg-[#E8521A] text-white px-4 py-2 rounded-full hover:bg-[#d04415] transition text-sm font-semibold"
-      >
-        Try free →
-      </Link>
-    </div>
+    <>
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        defaultTab={authTab}
+        onSuccess={() => {
+          setAuthOpen(false);
+          router.refresh();
+        }}
+      />
+      <div className="hidden md:flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => { setAuthTab('signin'); setAuthOpen(true); }}
+          className="px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:text-[#1A1A1A] hover:bg-[#F5F4F0] transition font-medium"
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          onClick={() => { setAuthTab('register'); setAuthOpen(true); }}
+          className="bg-[#E8521A] text-white px-4 py-2 rounded-full hover:bg-[#d04415] transition text-sm font-semibold"
+        >
+          Try free →
+        </button>
+      </div>
+    </>
   );
 }

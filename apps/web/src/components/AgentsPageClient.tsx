@@ -1,368 +1,437 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { AgentCard } from './AgentCard';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthModal } from './AuthModal';
 import { CreateAgentModal } from './CreateAgentModal';
-
-interface AgentTemplate {
-  id: string;
-  name: string;
-  description: string;
-  model: string;
-  tags: string[];
-  icon: string;
-}
-
-interface AgentsPageClientProps {
-  templates: AgentTemplate[];
-}
-
-function getToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-/* ── Social provider buttons ── */
-const SOCIAL_PROVIDERS = [
-  { icon: '🔵', label: 'Continue with Google' },
-  { icon: '⚫', label: 'Continue with GitHub' },
-  { icon: '🟦', label: 'Continue with Microsoft' },
+/* ─── Static data ─── */
+
+const TASKS = [
+  'Dashboard Layout Adjustment',
+  'Design agent system prompt',
+  'Configure tool integrations',
 ];
 
-/* ── Auth modal with Sign In + Create Account tabs ── */
-function AuthModal({ onClose }: { onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<'signin' | 'register'>('signin');
+const USE_CASE_PILLS = [
+  'Use cases',
+  'Build a business',
+  'Help me learn',
+  'Monitor the situation',
+  'Research',
+  'Create content',
+  'Analyze & research',
+];
 
-  /* Sign-in fields */
-  const [siEmail,    setSiEmail]    = useState('');
-  const [siPassword, setSiPassword] = useState('');
+const SUGGESTIONS_MAP: Record<string, { icon: string; text: string }[]> = {
+  'Use cases': [
+    { icon: '🚀', text: 'Build a space exploration timeline app' },
+    { icon: '📈', text: 'Create a real-time stock market tracker' },
+    { icon: '🤖', text: 'Prototype an AI chatbot demo application' },
+    { icon: '📋', text: 'Create a project management Kanban board' },
+  ],
+  'Build a business': [
+    { icon: '💼', text: 'Write a business plan for my SaaS idea' },
+    { icon: '📊', text: 'Analyze my target market and competitors' },
+    { icon: '💰', text: 'Create financial projections for Year 1' },
+    { icon: '🎯', text: 'Draft investor pitch deck outline' },
+  ],
+  'Help me learn': [
+    { icon: '🧠', text: 'Explain machine learning in plain English' },
+    { icon: '📅', text: 'Create a 30-day Python learning plan' },
+    { icon: '📄', text: 'Summarise this research paper for me' },
+    { icon: '❓', text: 'Quiz me on JavaScript fundamentals' },
+  ],
+  'Research': [
+    { icon: '📰', text: 'Summarise the latest AI research papers' },
+    { icon: '⚖️', text: 'Compare GPT-5 vs Claude Opus 4.6' },
+    { icon: '🔍', text: 'Find open-source alternatives to Notion' },
+    { icon: '📊', text: 'Research market size for AI tools' },
+  ],
+};
 
-  /* Register fields */
-  const [regName,     setRegName]     = useState('');
-  const [regEmail,    setRegEmail]    = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regConfirm,  setRegConfirm]  = useState('');
+interface AgentTemplate {
+  icon: string;
+  name: string;
+  desc: string;
+  tags: string[];
+  tagColors: string[];
+}
 
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+const STATIC_AGENT_TEMPLATES: AgentTemplate[] = [
+  {
+    icon: '🔍',
+    name: 'Research Agent',
+    desc: 'Automates web research and generates structured reports.',
+    tags: ['GPT-5.4', 'Web search'],
+    tagColors: ['bg-blue-100 text-blue-700', 'bg-gray-100 text-gray-600'],
+  },
+  {
+    icon: '🎧',
+    name: 'Support Agent',
+    desc: 'Handles tickets, FAQs, and escalates complex issues.',
+    tags: ['GPT-5.4', 'Ticketing'],
+    tagColors: ['bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700'],
+  },
+  {
+    icon: '💻',
+    name: 'Code Review Agent',
+    desc: 'Reviews PRs, flags bugs, and suggests improvements.',
+    tags: ['Claude Opus 4.6', 'GitHub'],
+    tagColors: ['bg-violet-100 text-violet-700', 'bg-gray-100 text-gray-600'],
+  },
+  {
+    icon: '📊',
+    name: 'Data Analysis Agent',
+    desc: 'Processes spreadsheets and generates visual insights.',
+    tags: ['Gemini', 'Sheets'],
+    tagColors: ['bg-blue-100 text-blue-700', 'bg-green-100 text-green-700'],
+  },
+  {
+    icon: '✍️',
+    name: 'Content Writer Agent',
+    desc: 'Creates blog posts and marketing copy with brand voice.',
+    tags: ['Claude Opus 4.6', 'Marketing'],
+    tagColors: ['bg-violet-100 text-violet-700', 'bg-orange-100 text-orange-700'],
+  },
+];
 
-  async function handleSignIn(e: FormEvent) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const res  = await fetch(`${API}/api/v1/auth/login`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: siEmail, password: siPassword }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.message || 'Sign in failed'); return; }
-      document.cookie = `access_token=${json.data.accessToken}; path=/; max-age=900`;
-      onClose();
-      window.location.reload();
-    } catch {
-      setError('Network error — please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
+const TOOLBAR_EMOJIS = ['🔥', '🎨', '📹', '💬', '📎', '🖼'];
 
-  async function handleRegister(e: FormEvent) {
-    e.preventDefault();
-    setError('');
-    if (regPassword !== regConfirm) { setError('Passwords do not match.'); return; }
-    setLoading(true);
-    try {
-      const res  = await fetch(`${API}/api/v1/auth/register`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name: regName, email: regEmail, password: regPassword }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.message || 'Registration failed'); return; }
-      document.cookie = `access_token=${json.data.accessToken}; path=/; max-age=900`;
-      onClose();
-      window.location.reload();
-    } catch {
-      setError('Network error — please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const inputCls = 'border border-[#E5E5E5] rounded-xl px-3 py-2.5 text-[13px] w-full focus:outline-none focus:border-[#E8521A]/50 transition';
-
+/* ─── TaskRow ─── */
+function TaskRow({ label }: { label: string }) {
+  const [checked, setChecked] = useState(false);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm"
-        onClick={(e) => e.stopPropagation()}
+    <div className="flex items-center gap-2 py-2 group">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => setChecked(!checked)}
+        className="rounded accent-[#E8521A]"
+      />
+      <span className="text-[13px] text-[#374151] flex-1 truncate">{label}</span>
+      <button
+        type="button"
+        className="opacity-0 group-hover:opacity-100 text-[#9CA3AF] text-[16px] leading-none"
+        aria-label="More options"
       >
-        {/* Close */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#1A1A1A] transition text-xl leading-none"
-        >
-          ✕
-        </button>
-
-        {/* Logo */}
-        <div className="flex justify-center mb-4">
-          <div className="w-9 h-9 bg-[#E8521A] rounded-xl flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 1L16 5V13L9 17L2 13V5L9 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-              <circle cx="9" cy="9" r="2.5" fill="white"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-[#E5E5E5] mb-5">
-          {(['signin', 'register'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => { setActiveTab(tab); setError(''); }}
-              className={`flex-1 pb-2.5 text-[13px] transition ${
-                activeTab === tab
-                  ? 'border-b-2 border-[#E8521A] text-[#1A1A1A] font-bold'
-                  : 'text-[#9CA3AF]'
-              }`}
-            >
-              {tab === 'signin' ? 'Sign In' : 'Create Account'}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Sign In tab ── */}
-        {activeTab === 'signin' && (
-          <form onSubmit={handleSignIn} className="space-y-3">
-            <input
-              type="email"
-              placeholder="Email"
-              required
-              value={siEmail}
-              onChange={(e) => setSiEmail(e.target.value)}
-              className={inputCls}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              required
-              value={siPassword}
-              onChange={(e) => setSiPassword(e.target.value)}
-              className={inputCls}
-            />
-            {error && <p className="text-[12px] text-red-500">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#E8521A] text-white rounded-xl py-2.5 text-[13px] font-semibold hover:bg-[#d04415] transition disabled:opacity-50"
-            >
-              {loading ? 'Signing in…' : 'Sign In →'}
-            </button>
-
-            <div className="flex items-center gap-2 my-1">
-              <span className="flex-1 h-px bg-[#E5E5E5]" />
-              <span className="text-[11px] text-[#9CA3AF]">or continue with</span>
-              <span className="flex-1 h-px bg-[#E5E5E5]" />
-            </div>
-
-            <div className="space-y-2">
-              {SOCIAL_PROVIDERS.map(({ icon, label }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="flex items-center gap-3 w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[13px] font-semibold text-[#374151] hover:border-[#1A1A1A] hover:bg-[#F5F4F0] transition"
-                >
-                  <span className="text-lg">{icon}</span>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-center text-[12px] text-[#9CA3AF] mt-2">
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('register'); setError(''); }}
-                className="text-[#E8521A] font-semibold hover:underline"
-              >
-                Create one →
-              </button>
-            </p>
-          </form>
-        )}
-
-        {/* ── Create Account tab ── */}
-        {activeTab === 'register' && (
-          <form onSubmit={handleRegister} className="space-y-3">
-            <input
-              type="text"
-              placeholder="Full name"
-              required
-              value={regName}
-              onChange={(e) => setRegName(e.target.value)}
-              className={inputCls}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              required
-              value={regEmail}
-              onChange={(e) => setRegEmail(e.target.value)}
-              className={inputCls}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              required
-              value={regPassword}
-              onChange={(e) => setRegPassword(e.target.value)}
-              className={inputCls}
-            />
-            <input
-              type="password"
-              placeholder="Confirm password"
-              required
-              value={regConfirm}
-              onChange={(e) => setRegConfirm(e.target.value)}
-              className={inputCls}
-            />
-            {error && <p className="text-[12px] text-red-500">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#E8521A] text-white rounded-xl py-2.5 text-[13px] font-semibold hover:bg-[#d04415] transition disabled:opacity-50"
-            >
-              {loading ? 'Creating account…' : 'Create Account →'}
-            </button>
-
-            <div className="flex items-center gap-2 my-1">
-              <span className="flex-1 h-px bg-[#E5E5E5]" />
-              <span className="text-[11px] text-[#9CA3AF]">or continue with</span>
-              <span className="flex-1 h-px bg-[#E5E5E5]" />
-            </div>
-
-            <div className="space-y-2">
-              {SOCIAL_PROVIDERS.map(({ icon, label }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="flex items-center gap-3 w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[13px] font-semibold text-[#374151] hover:border-[#1A1A1A] hover:bg-[#F5F4F0] transition"
-                >
-                  <span className="text-lg">{icon}</span>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-center text-[12px] text-[#9CA3AF] mt-2">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => { setActiveTab('signin'); setError(''); }}
-                className="text-[#E8521A] font-semibold hover:underline"
-              >
-                Sign in →
-              </button>
-            </p>
-          </form>
-        )}
-      </div>
+        ···
+      </button>
     </div>
   );
 }
 
-export function AgentsPageClient({ templates }: AgentsPageClientProps) {
+/* ─── Main component ─── */
+export function AgentsPageClient() {
+  const router = useRouter();
+
+  /* Auth state */
+  const [authChecked, setAuthChecked] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  /* UI state */
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showSignIn, setShowSignIn]           = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
+  const [activeUseCasePill, setActiveUseCasePill] = useState('Use cases');
+  const [chatInput, setChatInput] = useState('');
+  const [agentTemplates, setAgentTemplates] = useState<AgentTemplate[]>(STATIC_AGENT_TEMPLATES);
 
-  function requireAuth(action: () => void) {
-    if (!getToken()) { setShowSignIn(true); return; }
-    action();
+  /* Shuffle state */
+  const shuffleOffset = useRef(0);
+  const [shuffleIdx, setShuffleIdx] = useState(0);
+
+  /* ── Auth guard on mount ── */
+  useEffect(() => {
+    const token = localStorage.getItem('nexusai_token');
+    if (!token) {
+      setShowAuthModal(true);
+    }
+    setAuthChecked(true);
+  }, []);
+
+  /* ── Fetch agent templates from API ── */
+  useEffect(() => {
+    async function loadTemplates() {
+      try {
+        const res = await fetch(`${API}/api/v1/agents`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = (await res.json()) as { data?: unknown[] };
+        if (Array.isArray(json?.data) && json.data.length > 0) {
+          const mapped = json.data.map((item) => {
+            const a = item as Record<string, unknown>;
+            return {
+              icon: typeof a.icon === 'string' ? a.icon : '🤖',
+              name: typeof a.name === 'string' ? a.name : 'Agent',
+              desc: typeof a.description === 'string' ? a.description : '',
+              tags: Array.isArray(a.tags) ? (a.tags as string[]) : [],
+              tagColors: ['bg-blue-100 text-blue-700', 'bg-gray-100 text-gray-600'],
+            };
+          });
+          setAgentTemplates(mapped);
+        }
+      } catch {
+        /* fail silently — keep static fallback */
+      }
+    }
+    loadTemplates();
+  }, []);
+
+  /* ── Handle auth modal close ── */
+  function handleAuthModalClose() {
+    setShowAuthModal(false);
+    const token = localStorage.getItem('nexusai_token');
+    if (!token) {
+      router.push('/');
+    }
   }
 
-  function handleUseTemplate(template: AgentTemplate) {
-    requireAuth(() => { setSelectedTemplate(template); setShowCreateModal(true); });
+  const currentSuggestions =
+    SUGGESTIONS_MAP[activeUseCasePill] ?? SUGGESTIONS_MAP['Use cases'];
+
+  const displayedSuggestions = currentSuggestions
+    .slice(shuffleIdx, shuffleIdx + 4)
+    .concat(
+      currentSuggestions.slice(
+        0,
+        Math.max(0, shuffleIdx + 4 - currentSuggestions.length),
+      ),
+    );
+
+  function handleShuffle() {
+    const next = (shuffleOffset.current + 1) % currentSuggestions.length;
+    shuffleOffset.current = next;
+    setShuffleIdx(next);
   }
 
-  function handleCreate() {
-    requireAuth(() => { setSelectedTemplate(null); setShowCreateModal(true); });
-  }
+  if (!authChecked) return null;
 
   return (
     <>
-      {/* Agent templates */}
-      <section>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">Agent Templates</h2>
-            <p className="text-sm text-muted mt-0.5">Browse free — <button type="button" onClick={() => setShowSignIn(true)} className="text-[#E8521A] hover:underline font-medium">sign in</button> to create your own</p>
+      <div className="flex h-[calc(100vh-64px)] bg-[#F5F4F0] overflow-hidden">
+        {/* ─── LEFT SIDEBAR ─── */}
+        <aside className="w-[300px] flex-shrink-0 bg-white border-r border-[#E5E5E5] flex flex-col p-5">
+          {/* Top branding */}
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center text-white text-lg">
+              🤖
+            </div>
+            <div>
+              <p className="text-[14px] font-black text-[#1A1A1A]">Agent Builder</p>
+              <p className="text-[11px] text-[#6B7280]">
+                Create powerful AI agents using any model.
+              </p>
+            </div>
           </div>
+
+          {/* New Agent button */}
           <button
             type="button"
-            onClick={handleCreate}
-            className="bg-[#E8521A] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#d04415] transition flex items-center gap-2"
+            onClick={() => setShowCreateModal(true)}
+            className="mt-4 w-full bg-[#E8521A] text-white rounded-xl py-2.5 font-bold text-[13px] hover:bg-[#d04415] transition"
           >
-            <span className="text-lg leading-none">+</span>
-            Create agent
+            + New Agent
           </button>
-        </div>
 
-        {templates.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-border">
-            <p className="text-3xl mb-3">🤖</p>
-            <p className="font-semibold text-text-primary">No templates yet</p>
-            <p className="text-sm text-muted mt-1">Run the seed script to populate templates</p>
+          {/* Banner */}
+          <div className="mt-4 bg-[#FFF8F5] border border-[#E8521A]/20 rounded-xl p-3">
+            <p className="text-[#E8521A] text-[13px] font-bold">✦ Not sure where to start?</p>
+            <p className="text-[12px] text-[#6B7280] mt-1">
+              Chat with our AI guide — describe what you want your agent to do and get a
+              personalised setup plan.
+            </p>
+            <button
+              type="button"
+              className="mt-2 border border-[#E8521A] text-[#E8521A] text-[12px] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#E8521A]/5 transition"
+            >
+              Ask the Hub →
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.map((template) => (
-              <AgentCard
-                key={template.id}
-                agent={template}
-                onUse={() => handleUseTemplate(template)}
-              />
 
+          {/* Task list */}
+          <div className="mt-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                Tasks
+              </span>
+              <button
+                type="button"
+                className="text-[12px] text-[#E8521A] font-semibold hover:underline"
+              >
+                + New Task
+              </button>
+            </div>
+            {TASKS.map((task) => (
+              <TaskRow key={task} label={task} />
             ))}
           </div>
-        )}
-      </section>
+        </aside>
 
-      {/* How agents work */}
-      <section className="mt-14">
-        <h2 className="text-lg font-bold text-text-primary mb-5">How agents work</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { icon: '🎯', title: 'Choose a model', desc: 'Select from any of our 12+ AI models as the brain for your agent.' },
-            { icon: '📝', title: 'Write a system prompt', desc: 'Define your agent\'s persona, capabilities, and how it should behave.' },
-            { icon: '🔧', title: 'Add tools', desc: 'Give your agent web search, code execution, or API access (coming soon).' },
-          ].map((step) => (
-            <div key={step.title} className="rounded-2xl bg-surface border border-border p-5">
-              <span className="text-2xl">{step.icon}</span>
-              <h3 className="font-semibold text-text-primary mt-3 mb-1">{step.title}</h3>
-              <p className="text-sm text-muted leading-relaxed">{step.desc}</p>
+        {/* ─── RIGHT WORKSPACE ─── */}
+        <main className="flex-1 flex flex-col overflow-y-auto p-8">
+          {/* Header */}
+          <div>
+            <h1 className="text-4xl font-black text-[#1A1A1A]">
+              Agent works{' '}
+              <span style={{ color: '#E8521A' }}>for you.</span>
+            </h1>
+            <p className="text-[#6B7280] mt-2">
+              Your AI agent takes care of everything, end to end.
+            </p>
+          </div>
+
+          {/* Chat input */}
+          <div className="mt-8 bg-white rounded-2xl border border-[#E5E5E5] p-4">
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="What should we work on next?"
+              className="w-full text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
+              rows={2}
+            />
+            <div className="flex justify-between items-center mt-3">
+              {/* Toolbar */}
+              <div className="flex items-center gap-1">
+                {TOOLBAR_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="w-7 h-7 rounded-lg hover:bg-[#F5F4F0] flex items-center justify-center text-base text-[#6B7280] transition"
+                    aria-label={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              {/* Right controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151] hover:border-[#1A1A1A] transition"
+                >
+                  Agent ▼
+                </button>
+                <button
+                  type="button"
+                  className="w-9 h-9 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition"
+                  aria-label="Send"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
 
-      {showCreateModal && (
-        <CreateAgentModal
-          template={selectedTemplate}
-          onClose={() => setShowCreateModal(false)}
-        />
+          {/* Use case pills */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {USE_CASE_PILLS.map((pill) => (
+              <button
+                key={pill}
+                type="button"
+                onClick={() => {
+                  setActiveUseCasePill(pill);
+                  setShuffleIdx(0);
+                  shuffleOffset.current = 0;
+                }}
+                className={
+                  activeUseCasePill === pill
+                    ? 'bg-[#1A1A1A] text-white rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition'
+                    : 'border border-[#E5E5E5] text-[#6B7280] rounded-full px-3 py-1.5 text-[12px] hover:border-[#1A1A1A] transition'
+                }
+              >
+                {pill}
+              </button>
+            ))}
+          </div>
+
+          {/* Suggestion list */}
+          <div className="mt-4">
+            {displayedSuggestions.map((s, i) => (
+              <div
+                key={`${s.text}-${i}`}
+                className="flex items-center gap-3 py-2.5 cursor-pointer hover:text-[#E8521A] transition group"
+                onClick={() => setChatInput(s.text)}
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F5F4F0] to-[#E5E5E5] flex items-center justify-center text-base flex-shrink-0">
+                  {s.icon}
+                </div>
+                <span className="text-[14px] text-[#374151] group-hover:text-[#E8521A] transition">
+                  {s.text}
+                </span>
+              </div>
+            ))}
+
+            <div className="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                className="text-[13px] text-[#6B7280] font-medium hover:text-[#1A1A1A] transition"
+              >
+                View all suggestions →
+              </button>
+              <button
+                type="button"
+                onClick={handleShuffle}
+                className="text-[13px] text-[#6B7280] hover:text-[#1A1A1A] transition"
+              >
+                ↻ Shuffle
+              </button>
+            </div>
+          </div>
+
+          {/* Agent templates section */}
+          <div className="mt-8">
+            <div className="flex items-center">
+              <span className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                Agent Templates
+              </span>
+              <span className="text-[11px] bg-[#F5F4F0] text-[#6B7280] rounded-full px-2 py-0.5 ml-2 font-semibold">
+                {agentTemplates.length}
+              </span>
+            </div>
+
+            <div className="flex gap-4 mt-4 pb-2 overflow-x-auto">
+              {agentTemplates.map((tpl) => (
+                <div
+                  key={tpl.name}
+                  className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-[#E5E5E5] p-4 hover:shadow-md transition cursor-pointer"
+                >
+                  <div className="text-3xl mb-2">{tpl.icon}</div>
+                  <p className="font-bold text-[#1A1A1A] text-[14px]">{tpl.name}</p>
+                  <p className="text-[12px] text-[#6B7280] mt-1">{tpl.desc}</p>
+                  <div className="flex gap-1.5 mt-3 flex-wrap">
+                    {tpl.tags.map((tag, ti) => (
+                      <span
+                        key={tag}
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${tpl.tagColors[ti] ?? 'bg-gray-100 text-gray-600'}`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Build from scratch card */}
+              <div
+                className="flex-shrink-0 w-[200px] border-2 border-dashed border-[#E5E5E5] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-[#E8521A] transition"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <span className="text-2xl text-[#E8521A]">+</span>
+                <p className="text-[13px] font-bold text-[#1A1A1A] mt-1">Build from Scratch</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {showAuthModal && (
+        <AuthModal isOpen={showAuthModal} onClose={handleAuthModalClose} />
       )}
-
-      {showSignIn && <AuthModal onClose={() => setShowSignIn(false)} />}
+      {showCreateModal && (
+        <CreateAgentModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      )}
     </>
   );
 }
