@@ -270,29 +270,29 @@ export function AgentsPageClient() {
         {/* ─── RIGHT WORKSPACE ─── */}
         <main className="flex-1 flex flex-col overflow-y-auto p-8">
           {/* Header */}
-          <div>
-            <h1 className="text-4xl font-black text-[#1A1A1A]">
+          <div className="mb-2">
+            <h1 className="text-3xl font-black text-[#1A1A1A] leading-tight">
               Agent works{' '}
               <span style={{ color: '#E8521A' }}>for you.</span>
             </h1>
-            <p className="text-[#6B7280] mt-2">
+            <p className="text-[#6B7280] mt-1 text-[14px]">
               Your AI agent takes care of everything, end to end.
             </p>
           </div>
 
           {/* Chat input */}
-          <div className="mt-8 bg-white rounded-2xl border border-[#E5E5E5] overflow-hidden">
+          <div className="mt-5 bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden">
             <div className="p-4 pb-2">
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="What should we work on next?"
                 className="w-full text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
-                rows={2}
+                rows={3}
               />
             </div>
             {/* Media toolbar */}
-            <div className="border-t border-[#F5F4F0]">
+            <div className="border-t border-[#F0EEE9]">
               <MediaToolbar
                 onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
                 onAttachFile={(f) => console.log('attach:', f.name)}
@@ -347,7 +347,7 @@ export function AgentsPageClient() {
             {displayedSuggestions.map((s, i) => (
               <div
                 key={`${s.text}-${i}`}
-                className="flex items-center gap-3 py-2.5 cursor-pointer hover:text-[#E8521A] transition group"
+                className="flex items-center gap-3 py-2.5 cursor-pointer hover:text-[#E8521A] transition group border-b border-[#F5F4F0] last:border-0"
                 onClick={() => setChatInput(s.text)}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F5F4F0] to-[#E5E5E5] flex items-center justify-center text-base flex-shrink-0">
@@ -393,7 +393,7 @@ export function AgentsPageClient() {
                   key={tpl.name}
                   className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-[#E5E5E5] p-4 hover:shadow-md transition cursor-pointer"
                 >
-                  <div className="text-3xl mb-2">{tpl.icon}</div>
+                  <div className="w-10 h-10 rounded-xl bg-[#F5F4F0] flex items-center justify-center text-2xl mb-3">{tpl.icon}</div>
                   <p className="font-bold text-[#1A1A1A] text-[14px]">{tpl.name}</p>
                   <p className="text-[12px] text-[#6B7280] mt-1">{tpl.desc}</p>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
@@ -414,8 +414,11 @@ export function AgentsPageClient() {
                 className="flex-shrink-0 w-[200px] border-2 border-dashed border-[#E5E5E5] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-[#E8521A] transition"
                 onClick={() => setShowCreateModal(true)}
               >
-                <span className="text-2xl text-[#E8521A]">+</span>
-                <p className="text-[13px] font-bold text-[#1A1A1A] mt-1">Build from Scratch</p>
+                <div className="w-10 h-10 rounded-full bg-[#E8521A]/10 flex items-center justify-center mb-3">
+                  <span className="text-xl font-bold text-[#E8521A] leading-none">+</span>
+                </div>
+                <p className="text-[13px] font-bold text-[#1A1A1A]">Build from Scratch</p>
+                <p className="text-[11px] text-[#6B7280] mt-1 text-center">Start with a blank agent</p>
               </div>
             </div>
           </div>
