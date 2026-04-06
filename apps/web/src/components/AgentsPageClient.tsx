@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from './AuthModal';
 import { CreateAgentModal } from './CreateAgentModal';
@@ -137,8 +137,18 @@ export function AgentsPageClient() {
   const [agentTemplates, setAgentTemplates] = useState<AgentTemplate[]>(STATIC_AGENT_TEMPLATES);
 
   /* Attachment state */
-  const [attachedFiles, setAttachedFiles] = useState<{ name: string; type: string }[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; type: string; blob?: Blob }[]>([]);
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+
+  /* Recording state */
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   /* Shuffle state */
   const shuffleOffset = useRef(0);
@@ -205,6 +215,90 @@ export function AgentsPageClient() {
     const next = (shuffleOffset.current + 1) % currentSuggestions.length;
     shuffleOffset.current = next;
     setShuffleIdx(next);
+  }
+
+  /* ── Toast helper ── */
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  /* ── Stop any active stream ── */
+  function stopStream() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setRecSeconds(0);
+  }
+
+  /* ── Voice recording ── */
+  const toggleVoiceRecording = useCallback(async () => {
+    if (isVoiceRecording) {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const name = `voice-note-${Date.now()}.webm`;
+        setAttachedFiles((prev) => [...prev, { name, type: 'audio/webm', blob }]);
+        setChatInput((prev) => prev + (prev ? ' ' : '') + `[🎙️ ${name}]`);
+        stopStream();
+        setIsVoiceRecording(false);
+        showToast('Voice note attached');
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsVoiceRecording(true);
+      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+    } catch {
+      showToast('Microphone access denied');
+    }
+  }, [isVoiceRecording]);
+
+  /* ── Screen share ── */
+  const toggleScreenShare = useCallback(async () => {
+    if (isScreenSharing) {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        const name = `screen-recording-${Date.now()}.webm`;
+        setAttachedFiles((prev) => [...prev, { name, type: 'video/webm', blob }]);
+        setChatInput((prev) => prev + (prev ? ' ' : '') + `[🖥️ ${name}]`);
+        stopStream();
+        setIsScreenSharing(false);
+        showToast('Screen recording attached');
+      };
+      stream.getVideoTracks()[0].onended = () => mr.stop();
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsScreenSharing(true);
+      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+      showToast('Screen sharing started — stop from browser bar');
+    } catch {
+      showToast('Screen share cancelled');
+    }
+  }, [isScreenSharing]);
+
+  /* ── Format recording timer ── */
+  function fmtTime(s: number) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
   }
 
   function handleSend(e: React.MouseEvent<HTMLButtonElement>) {
@@ -346,62 +440,169 @@ export function AgentsPageClient() {
             {/* Bottom toolbar — icons LEFT, controls RIGHT — all one row */}
             <div className="border-t border-[#F0EEE9] px-4 py-2.5 flex items-center justify-between gap-2">
               {/* Left: media icons */}
-              <div className="flex items-center gap-1">
-                {/* Microphone */}
-                <button type="button"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+              <div className="flex items-center gap-0.5">
+
+                {/* 🎙️ Voice recording */}
+                <button
+                  type="button"
+                  title={isVoiceRecording ? `Stop recording (${fmtTime(recSeconds)})` : 'Record voice note'}
+                  onClick={() => void toggleVoiceRecording()}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition ${
+                    isVoiceRecording
+                      ? 'bg-red-50 text-red-500 animate-pulse'
+                      : 'text-purple-500 hover:bg-purple-50'
+                  }`}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
                   </svg>
                 </button>
-                {/* Paperclip — file attach */}
-                <label className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition cursor-pointer">
-                  <input type="file" className="hidden" onChange={(e) => {
-                    const f = e.target.files?.[0]; if (!f) return;
-                    setAttachedFiles(prev => [...prev, { name: f.name, type: f.type }]);
-                    setChatInput(prev => prev + (prev ? ' ' : '') + `[📎 ${f.name}]`);
-                    e.target.value = '';
-                  }} />
+
+                {/* 📁 Folder upload */}
+                <label
+                  title="Upload folder"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-orange-400 hover:bg-orange-50 transition cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    className="hidden"
+                    // @ts-expect-error webkitdirectory not in TS types
+                    webkitdirectory=""
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length === 0) return;
+                      setAttachedFiles((prev) => [
+                        ...prev,
+                        ...files.map((f) => ({ name: f.name, type: f.type })),
+                      ]);
+                      setChatInput((prev) => prev + (prev ? ' ' : '') + `[📁 ${files.length} files]`);
+                      showToast(`${files.length} files attached`);
+                      e.target.value = '';
+                    }}
+                  />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </label>
+
+                {/* 🎥 Video (file upload) */}
+                <label
+                  title="Attach video"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-500 hover:bg-blue-50 transition cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]; if (!f) return;
+                      setAttachedFiles((prev) => [...prev, { name: f.name, type: f.type }]);
+                      setChatInput((prev) => prev + (prev ? ' ' : '') + `[🎥 ${f.name}]`);
+                      showToast('Video attached');
+                      e.target.value = '';
+                    }}
+                  />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m22 8-6 4 6 4V8z"/>
+                    <rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+                  </svg>
+                </label>
+
+                {/* 🖥️ Screen share + record */}
+                <button
+                  type="button"
+                  title={isScreenSharing ? `Stop screen recording (${fmtTime(recSeconds)})` : 'Share & record screen'}
+                  onClick={() => void toggleScreenShare()}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition ${
+                    isScreenSharing
+                      ? 'bg-red-50 text-red-500 animate-pulse'
+                      : 'text-teal-500 hover:bg-teal-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="15" x="2" y="3" rx="2"/>
+                    <polyline points="8 21 12 17 16 21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                </button>
+
+                {/* 📎 File attach */}
+                <label
+                  title="Attach file"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-rose-400 hover:bg-rose-50 transition cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length === 0) return;
+                      setAttachedFiles((prev) => [
+                        ...prev,
+                        ...files.map((f) => ({ name: f.name, type: f.type })),
+                      ]);
+                      setChatInput((prev) => prev + (prev ? ' ' : '') + files.map((f) => `[📎 ${f.name}]`).join(' '));
+                      e.target.value = '';
+                    }}
+                  />
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                   </svg>
                 </label>
-                {/* Image */}
-                <label className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition cursor-pointer">
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                    const f = e.target.files?.[0]; if (!f) return;
-                    const url = URL.createObjectURL(f);
-                    setAttachedImages(prev => [...prev, url]);
-                    e.target.value = '';
-                  }} />
+
+                {/* 🖼️ Image attach */}
+                <label
+                  title="Attach image"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-green-500 hover:bg-green-50 transition cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length === 0) return;
+                      files.forEach((f) => {
+                        const url = URL.createObjectURL(f);
+                        setAttachedImages((prev) => [...prev, url]);
+                      });
+                      e.target.value = '';
+                    }}
+                  />
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/>
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                    <circle cx="9" cy="9" r="2"/>
                     <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
                   </svg>
                 </label>
-                {/* Sparkle / AI enhance */}
-                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+
+                {/* ✦ More */}
+                <button
+                  type="button"
+                  title="More options"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#F5F4F0] hover:text-[#6B7280] transition"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-                  </svg>
-                </button>
-                {/* Video */}
-                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m22 8-6 4 6 4V8z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
-                  </svg>
-                </button>
-                {/* Screen share */}
-                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="15" x="2" y="3" rx="2"/><polyline points="8 21 12 17 16 21"/>
-                    <line x1="12" y1="17" x2="12" y2="21"/>
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                 </button>
               </div>
+
+              {/* Recording timer badge */}
+              {(isVoiceRecording || isScreenSharing) && (
+                <span className="text-[11px] font-mono text-red-500 font-bold flex-shrink-0">
+                  ⏺ {fmtTime(recSeconds)}
+                </span>
+              )}
+
               {/* Right: Agent pill + send */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                 <button type="button"
                   className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151] hover:border-[#1A1A1A] transition">
                   Agent ▼
@@ -537,6 +738,13 @@ export function AgentsPageClient() {
       )}
       {showCreateModal && (
         <CreateAgentModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1A1A1A] text-white text-[13px] font-medium px-5 py-2.5 rounded-full shadow-lg pointer-events-none animate-fade-in">
+          {toast}
+        </div>
       )}
     </>
   );
