@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 interface ResearchPaper {
   id: string;
   date: string | number;
+  month?: string;
   lab: string;
   category: string;
   categoryColor: string;
@@ -17,6 +18,45 @@ interface ResearchPaper {
   impact?: string;
   citation?: string;
   arxiv?: string;
+}
+
+/* Raw shape returned by /api/v1/research */
+interface ApiPaper {
+  _id?: string;
+  id?: string;
+  title: string;
+  summary: string;
+  source: string;
+  date: number;
+  month: string;
+  status?: string;
+}
+
+const SOURCE_META: Record<string, { category: string; categoryColor: string }> = {
+  'Anthropic Blog': { category: 'ALIGNMENT', categoryColor: 'bg-green-100 text-green-700' },
+  arXiv: { category: 'ALIGNMENT', categoryColor: 'bg-green-100 text-green-700' },
+  'DeepSeek Research': { category: 'OPEN WEIGHTS', categoryColor: 'bg-indigo-100 text-indigo-700' },
+  'Google Research': { category: 'REASONING', categoryColor: 'bg-blue-100 text-blue-700' },
+  'Meta AI': { category: 'OPEN WEIGHTS', categoryColor: 'bg-sky-100 text-sky-700' },
+  'OpenAI Blog': { category: 'EFFICIENCY', categoryColor: 'bg-amber-100 text-amber-700' },
+};
+
+function mapApiPaper(p: ApiPaper, i: number): ResearchPaper {
+  const meta = SOURCE_META[p.source] ?? {
+    category: 'RESEARCH',
+    categoryColor: 'bg-gray-100 text-gray-700',
+  };
+  return {
+    id: p._id ?? p.id ?? String(i + 1),
+    date: p.date,
+    month: p.month,
+    lab: p.source,
+    category: meta.category,
+    categoryColor: meta.categoryColor,
+    title: p.title,
+    desc: p.summary,
+    fullDesc: p.summary,
+  };
 }
 
 const PAPERS: ResearchPaper[] = [
@@ -190,27 +230,52 @@ const PAPERS: ResearchPaper[] = [
   },
 ];
 
-function formatPaperDate(date: string | number): string {
-  if (typeof date === 'number') return String(date);
-  const parts = date.split(' ');
-  return parts.length > 1 ? parts[1] : date;
+/** Format the left-sidebar date chip */
+function sidebarDate(paper: ResearchPaper): string {
+  if (typeof paper.date === 'number') {
+    return paper.month ? `${paper.month.toUpperCase()} ${paper.date}` : String(paper.date);
+  }
+  return paper.date;
+}
+
+/** Format the right-panel header date */
+function headerDate(paper: ResearchPaper): string {
+  if (typeof paper.date === 'number') {
+    const monthName = paper.month
+      ? new Date(`${paper.month} 1 2026`).toLocaleString('default', { month: 'long' })
+      : 'March';
+    return `${monthName} ${paper.date}, 2026`;
+  }
+  // string like "MAR 26" → "March 26, 2026"
+  const parts = paper.date.split(' ');
+  if (parts.length === 2) {
+    const d = new Date(`${parts[0]} ${parts[1]} 2026`);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+  }
+  return `March ${paper.date}, 2026`;
 }
 
 const FILTER_TABS = [
-  'All',
-  '🧠 Reasoning',
-  '🌐 Multimodal',
-  '🛡️ Alignment',
-  '⚡ Efficiency',
-  '🔓 Open Weights',
+  { label: 'All', match: 'all' },
+  { label: '🧠 Reasoning', match: 'reasoning' },
+  { label: '🌐 Multimodal', match: 'multimodal' },
+  { label: '🛡️ Alignment', match: 'alignment' },
+  { label: '⚡ Efficiency', match: 'efficiency' },
+  { label: '🔓 Open Weights', match: 'openweights' },
 ];
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+function normalize(s: string) {
+  return s.toLowerCase().replace(/[^a-z]/g, '');
+}
+
 export default function ResearchPage() {
   const [papers, setPapers] = useState<ResearchPaper[]>(PAPERS);
-  const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedPaper, setSelectedPaper] = useState<ResearchPaper>(PAPERS[0]);
+  const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -219,11 +284,12 @@ export default function ResearchPage() {
       try {
         const res = await fetch(`${API}/api/v1/research?limit=10`);
         if (res.ok) {
-          const json = (await res.json()) as { data?: ResearchPaper[] };
+          const json = (await res.json()) as { data?: ApiPaper[] };
           const fetched = Array.isArray(json?.data) ? json.data : [];
           if (fetched.length > 0) {
-            setPapers(fetched);
-            setSelectedPaper(fetched[0]);
+            const mapped = fetched.map(mapApiPaper);
+            setPapers(mapped);
+            setSelectedPaper(mapped[0]);
             setLoading(false);
             return;
           }
@@ -238,33 +304,10 @@ export default function ResearchPage() {
     void loadPapers();
   }, []);
 
-  useEffect(() => {
-    async function loadDetail() {
-      if (!selectedPaper) return;
-      try {
-        const res = await fetch(`${API}/api/v1/research/${selectedPaper.id}`);
-        if (res.ok) {
-          const json = (await res.json()) as { data?: ResearchPaper };
-          if (json?.data) {
-            setSelectedPaper(json.data);
-          }
-        }
-      } catch {
-        // keep current selectedPaper from static data
-      }
-    }
-    void loadDetail();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPaper?.id]);
-
   const filteredPapers =
-    activeFilter === 'All'
+    activeFilter === 'all'
       ? papers
-      : papers.filter((p) =>
-          p.category
-            .toLowerCase()
-            .includes(activeFilter.toLowerCase().replace(/[^a-z]/g, '')),
-        );
+      : papers.filter((p) => normalize(p.category).includes(activeFilter));
 
   return (
     <div className="bg-[#F5F4F0] flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
@@ -274,13 +317,13 @@ export default function ResearchPage() {
           <h1 className="text-2xl font-black text-[#1A1A1A]">AI Research Feed</h1>
           <p className="text-[#6B7280] text-sm mt-1">Curated breakthroughs · Updated daily</p>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <span className="bg-[#F5F4F0] border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151]">
             + 6 papers this week
           </span>
           <button
             type="button"
-            className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-medium text-[#6B7280] ml-2 hover:border-[#1A1A1A] transition"
+            className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-medium text-[#6B7280] hover:border-[#1A1A1A] transition"
           >
             🔔 Subscribe
           </button>
@@ -288,19 +331,19 @@ export default function ResearchPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="bg-white border-b border-[#E5E5E5] px-6 py-2 flex gap-2 overflow-x-auto flex-shrink-0">
+      <div className="bg-white border-b border-[#E5E5E5] px-6 py-2 flex gap-1 overflow-x-auto flex-shrink-0">
         {FILTER_TABS.map((tab) => (
           <button
-            key={tab}
+            key={tab.match}
             type="button"
-            onClick={() => setActiveFilter(tab)}
+            onClick={() => setActiveFilter(tab.match)}
             className={
-              activeFilter === tab
+              activeFilter === tab.match
                 ? 'bg-[#E8521A] text-white rounded-full px-4 py-1.5 text-[13px] font-semibold whitespace-nowrap'
                 : 'text-[#6B7280] px-4 py-1.5 text-[13px] hover:text-[#1A1A1A] whitespace-nowrap transition'
             }
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -313,7 +356,9 @@ export default function ResearchPage() {
             <div className="p-6 text-center text-[#6B7280] text-[13px]">Loading…</div>
           )}
           {!loading && filteredPapers.length === 0 && (
-            <div className="p-6 text-center text-[#6B7280] text-[13px]">No papers match this filter.</div>
+            <div className="p-6 text-center text-[#6B7280] text-[13px]">
+              No papers match this filter.
+            </div>
           )}
           {!loading &&
             filteredPapers.map((paper) => (
@@ -326,12 +371,12 @@ export default function ResearchPage() {
                     : 'border-l-4 border-l-transparent hover:bg-[#F5F4F0]'
                 }`}
               >
-                <div className="text-[20px] font-black text-[#D1D5DB] mb-1">{paper.date}</div>
+                <div className="text-[20px] font-black text-[#D1D5DB] mb-1">
+                  {sidebarDate(paper)}
+                </div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] text-[#6B7280] font-medium">{paper.lab}</span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${paper.categoryColor}`}
-                  >
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${paper.categoryColor}`}>
                     {paper.category}
                   </span>
                 </div>
@@ -347,124 +392,113 @@ export default function ResearchPage() {
 
         {/* Right detail */}
         <div className="flex-1 overflow-y-auto bg-[#F5F4F0]">
-          {!selectedPaper ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <div className="text-6xl mb-4">🔬</div>
-              <p className="text-[#6B7280] text-[15px]">
-                Select a paper to read the full details
-              </p>
+          <div className="p-8 max-w-3xl">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${selectedPaper.categoryColor}`}>
+                {selectedPaper.category}
+              </span>
+              <span className="text-[#6B7280] text-[13px]">{selectedPaper.lab}</span>
+              <span className="text-[#9CA3AF] text-[13px] ml-auto">
+                {headerDate(selectedPaper)}
+              </span>
             </div>
-          ) : (
-            <div className="p-8 max-w-3xl">
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-2">
-                <span
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${selectedPaper.categoryColor}`}
-                >
-                  {selectedPaper.category}
-                </span>
-                <span className="text-[#6B7280] text-[13px]">{selectedPaper.lab}</span>
-                <span className="text-[#9CA3AF] text-[13px] ml-auto">
-                  March {formatPaperDate(selectedPaper.date)}, 2026
-                </span>
-              </div>
-              <h2 className="text-2xl font-black text-[#1A1A1A] leading-tight mb-2">
-                {selectedPaper.title}
-              </h2>
+            <h2 className="text-2xl font-black text-[#1A1A1A] leading-tight mb-2">
+              {selectedPaper.title}
+            </h2>
+            {selectedPaper.authors && (
               <p className="text-[13px] text-[#6B7280] mb-6">
                 Authors: {selectedPaper.authors}
               </p>
+            )}
 
-              {/* Overview */}
+            {/* Overview */}
+            <section className="mb-8">
+              <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
+                OVERVIEW
+              </h3>
+              <p className="text-[14px] text-[#374151] leading-relaxed">
+                {selectedPaper.fullDesc ?? selectedPaper.desc}
+              </p>
+            </section>
+
+            {/* Metrics */}
+            {selectedPaper.metrics && selectedPaper.metrics.length > 0 && (
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                {selectedPaper.metrics.map((m) => (
+                  <div
+                    key={m.label}
+                    className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center"
+                  >
+                    <p className="text-2xl font-black text-[#1A1A1A]">{m.value}</p>
+                    <p className="text-[11px] text-[#6B7280] mt-1">{m.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Key findings */}
+            {selectedPaper.findings && selectedPaper.findings.length > 0 && (
               <section className="mb-8">
                 <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                  OVERVIEW
+                  KEY FINDINGS
                 </h3>
-                <p className="text-[14px] text-[#374151] leading-relaxed">
-                  {selectedPaper.fullDesc}
-                </p>
+                <ol className="space-y-2">
+                  {selectedPaper.findings.map((f, i) => (
+                    <li key={i} className="flex gap-3 text-[14px] text-[#374151]">
+                      <span className="text-[#E8521A] font-bold flex-shrink-0">{i + 1}.</span>
+                      {f}
+                    </li>
+                  ))}
+                </ol>
               </section>
+            )}
 
-              {/* Metrics */}
-              {selectedPaper.metrics && selectedPaper.metrics.length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  {selectedPaper.metrics.map((m) => (
-                    <div
-                      key={m.label}
-                      className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center"
+            {/* Models referenced */}
+            {selectedPaper.models && selectedPaper.models.length > 0 && (
+              <section className="mb-8">
+                <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
+                  MODELS REFERENCED
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPaper.models.map((m) => (
+                    <span
+                      key={m}
+                      className="bg-[#F5F4F0] border border-[#E5E5E5] text-[#374151] text-[12px] font-semibold px-3 py-1.5 rounded-full"
                     >
-                      <p className="text-2xl font-black text-[#1A1A1A]">{m.value}</p>
-                      <p className="text-[11px] text-[#6B7280] mt-1">{m.label}</p>
-                    </div>
+                      {m}
+                    </span>
                   ))}
                 </div>
-              )}
+              </section>
+            )}
 
-              {/* Key findings */}
-              {selectedPaper.findings && selectedPaper.findings.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                    KEY FINDINGS
-                  </h3>
-                  <ol className="space-y-2">
-                    {selectedPaper.findings.map((f, i) => (
-                      <li key={i} className="flex gap-3 text-[14px] text-[#374151]">
-                        <span className="text-[#E8521A] font-bold flex-shrink-0">{i + 1}.</span>
-                        {f}
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-              )}
+            {/* Impact */}
+            {selectedPaper.impact && (
+              <div className="bg-[#FFF8F5] border-l-4 border-[#E8521A] rounded-r-xl p-4 mb-8">
+                <p className="text-[13px] font-bold text-[#E8521A] mb-1">⚡ IMPACT ASSESSMENT</p>
+                <p className="text-[13px] text-[#374151]">{selectedPaper.impact}</p>
+              </div>
+            )}
 
-              {/* Models referenced */}
-              {selectedPaper.models && selectedPaper.models.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                    MODELS REFERENCED
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedPaper.models.map((m) => (
-                      <span
-                        key={m}
-                        className="bg-[#F5F4F0] border border-[#E5E5E5] text-[#374151] text-[12px] font-semibold px-3 py-1.5 rounded-full"
-                      >
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Impact */}
-              {selectedPaper.impact && (
-                <div className="bg-[#FFF8F5] border-l-4 border-[#E8521A] rounded-r-xl p-4 mb-8">
-                  <p className="text-[13px] font-bold text-[#E8521A] mb-1">
-                    ⚡ IMPACT ASSESSMENT
-                  </p>
-                  <p className="text-[13px] text-[#374151]">{selectedPaper.impact}</p>
+            {/* Citation */}
+            {selectedPaper.citation && (
+              <div className="bg-white rounded-xl border border-[#E5E5E5] p-4">
+                <p className="text-[12px] text-[#6B7280] mb-2">{selectedPaper.citation}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#E8521A] text-[12px] font-semibold">
+                    {selectedPaper.arxiv} ↗
+                  </span>
+                  <button
+                    type="button"
+                    className="text-[11px] border border-[#E5E5E5] px-3 py-1.5 rounded-lg font-medium text-[#6B7280] hover:bg-[#F5F4F0]"
+                  >
+                    Copy
+                  </button>
                 </div>
-              )}
-
-              {/* Citation */}
-              {selectedPaper.citation && (
-                <div className="bg-white rounded-xl border border-[#E5E5E5] p-4">
-                  <p className="text-[12px] text-[#6B7280] mb-2">{selectedPaper.citation}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#E8521A] text-[12px] font-semibold">
-                      {selectedPaper.arxiv} ↗
-                    </span>
-                    <button
-                      type="button"
-                      className="text-[11px] border border-[#E5E5E5] px-3 py-1.5 rounded-lg font-medium text-[#6B7280] hover:bg-[#F5F4F0]"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
