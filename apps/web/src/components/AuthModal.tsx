@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AuthModalProps {
@@ -104,8 +105,9 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
   const [regLoading,  setRegLoading]  = useState(false);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  const inputCls = 'w-full bg-[#F5F4F0] border-0 rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#E8521A]/30 transition';
+  const inputCls ='w-full bg-[#F5F4F0] border-0 rounded-xl px-4 py-2.5 text-[14px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#E8521A]/30 transition';
 
   async function handleSignIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -163,16 +165,16 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
 
   const featureTexts = [t.auth_feature1, t.auth_feature2, t.auth_feature3, t.auth_feature4];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      {/* Modal — fixed height, no viewport overflow */}
+      {/* Modal */}
       <div
         className="flex w-full rounded-2xl shadow-2xl overflow-hidden"
-        style={{ maxWidth: '820px', height: 'min(580px, calc(100vh - 48px))' }}
+        style={{ maxWidth: '820px', height: 'min(600px, calc(100vh - 48px))' }}
       >
 
         {/* ── LEFT PANEL ── */}
@@ -353,6 +355,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
