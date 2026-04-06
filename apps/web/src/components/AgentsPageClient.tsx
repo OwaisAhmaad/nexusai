@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { AgentCard } from './AgentCard';
 import { CreateAgentModal } from './CreateAgentModal';
-import Link from 'next/link';
 
 interface AgentTemplate {
   id: string;
@@ -24,54 +23,258 @@ function getToken(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-/* ── Sign-in modal shown when guest tries to create ── */
-function SignInModal({ onClose }: { onClose: () => void }) {
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+/* ── Social provider buttons ── */
+const SOCIAL_PROVIDERS = [
+  { icon: '🔵', label: 'Continue with Google' },
+  { icon: '⚫', label: 'Continue with GitHub' },
+  { icon: '🟦', label: 'Continue with Microsoft' },
+];
+
+/* ── Auth modal with Sign In + Create Account tabs ── */
+function AuthModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'signin' | 'register'>('signin');
+
+  /* Sign-in fields */
+  const [siEmail,    setSiEmail]    = useState('');
+  const [siPassword, setSiPassword] = useState('');
+
+  /* Register fields */
+  const [regName,     setRegName]     = useState('');
+  const [regEmail,    setRegEmail]    = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirm,  setRegConfirm]  = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState('');
+
+  async function handleSignIn(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/v1/auth/login`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: siEmail, password: siPassword }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.message || 'Sign in failed'); return; }
+      document.cookie = `access_token=${json.data.accessToken}; path=/; max-age=900`;
+      onClose();
+      window.location.reload();
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRegister(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (regPassword !== regConfirm) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/v1/auth/register`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name: regName, email: regEmail, password: regPassword }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.message || 'Registration failed'); return; }
+      document.cookie = `access_token=${json.data.accessToken}; path=/; max-age=900`;
+      onClose();
+      window.location.reload();
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const inputCls = 'border border-[#E5E5E5] rounded-xl px-3 py-2.5 text-[13px] w-full focus:outline-none focus:border-[#E8521A]/50 transition';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
-        className="relative bg-white rounded-2xl border border-[#E5E5E5] shadow-xl p-8 w-full max-w-sm"
+        className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
-        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#1A1A1A] transition text-xl leading-none">✕</button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#1A1A1A] transition text-xl leading-none"
+        >
+          ✕
+        </button>
 
         {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="w-10 h-10 bg-[#E8521A] rounded-xl flex items-center justify-center mx-auto mb-3">
-            <svg width="20" height="20" viewBox="0 0 18 18" fill="none">
+        <div className="flex justify-center mb-4">
+          <div className="w-9 h-9 bg-[#E8521A] rounded-xl flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M9 1L16 5V13L9 17L2 13V5L9 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
               <circle cx="9" cy="9" r="2.5" fill="white"/>
             </svg>
           </div>
-          <h2 className="text-[18px] font-black text-[#1A1A1A]">Sign in to create agents</h2>
-          <p className="text-[13px] text-[#6B7280] mt-1">Browse templates is free — creating requires an account</p>
         </div>
 
-        {/* Social buttons */}
-        <div className="space-y-2.5 mb-5">
-          {[
-            { icon: '🔵', label: 'Continue with Google',    href: '/auth/login' },
-            { icon: '⚫', label: 'Continue with GitHub',    href: '/auth/login' },
-            { icon: '🟦', label: 'Continue with Microsoft', href: '/auth/login' },
-          ].map(({ icon, label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex items-center gap-3 w-full border border-[#E5E5E5] rounded-xl px-4 py-3 text-[13px] font-semibold text-[#374151] hover:border-[#1A1A1A] hover:bg-[#F5F4F0] transition"
+        {/* Tabs */}
+        <div className="flex border-b border-[#E5E5E5] mb-5">
+          {(['signin', 'register'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => { setActiveTab(tab); setError(''); }}
+              className={`flex-1 pb-2.5 text-[13px] transition ${
+                activeTab === tab
+                  ? 'border-b-2 border-[#E8521A] text-[#1A1A1A] font-bold'
+                  : 'text-[#9CA3AF]'
+              }`}
             >
-              <span className="text-lg">{icon}</span>
-              {label}
-            </Link>
+              {tab === 'signin' ? 'Sign In' : 'Create Account'}
+            </button>
           ))}
         </div>
 
-        <div className="text-center text-[12px] text-[#9CA3AF]">
-          Or{' '}
-          <Link href="/auth/login" className="text-[#E8521A] font-semibold hover:underline">sign in with email</Link>
-          {' '}·{' '}
-          <Link href="/auth/register" className="text-[#E8521A] font-semibold hover:underline">create account</Link>
-        </div>
+        {/* ── Sign In tab ── */}
+        {activeTab === 'signin' && (
+          <form onSubmit={handleSignIn} className="space-y-3">
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={siEmail}
+              onChange={(e) => setSiEmail(e.target.value)}
+              className={inputCls}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={siPassword}
+              onChange={(e) => setSiPassword(e.target.value)}
+              className={inputCls}
+            />
+            {error && <p className="text-[12px] text-red-500">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#E8521A] text-white rounded-xl py-2.5 text-[13px] font-semibold hover:bg-[#d04415] transition disabled:opacity-50"
+            >
+              {loading ? 'Signing in…' : 'Sign In →'}
+            </button>
+
+            <div className="flex items-center gap-2 my-1">
+              <span className="flex-1 h-px bg-[#E5E5E5]" />
+              <span className="text-[11px] text-[#9CA3AF]">or continue with</span>
+              <span className="flex-1 h-px bg-[#E5E5E5]" />
+            </div>
+
+            <div className="space-y-2">
+              {SOCIAL_PROVIDERS.map(({ icon, label }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="flex items-center gap-3 w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[13px] font-semibold text-[#374151] hover:border-[#1A1A1A] hover:bg-[#F5F4F0] transition"
+                >
+                  <span className="text-lg">{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-center text-[12px] text-[#9CA3AF] mt-2">
+              Don&apos;t have an account?{' '}
+              <button
+                type="button"
+                onClick={() => { setActiveTab('register'); setError(''); }}
+                className="text-[#E8521A] font-semibold hover:underline"
+              >
+                Create one →
+              </button>
+            </p>
+          </form>
+        )}
+
+        {/* ── Create Account tab ── */}
+        {activeTab === 'register' && (
+          <form onSubmit={handleRegister} className="space-y-3">
+            <input
+              type="text"
+              placeholder="Full name"
+              required
+              value={regName}
+              onChange={(e) => setRegName(e.target.value)}
+              className={inputCls}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={regEmail}
+              onChange={(e) => setRegEmail(e.target.value)}
+              className={inputCls}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={regPassword}
+              onChange={(e) => setRegPassword(e.target.value)}
+              className={inputCls}
+            />
+            <input
+              type="password"
+              placeholder="Confirm password"
+              required
+              value={regConfirm}
+              onChange={(e) => setRegConfirm(e.target.value)}
+              className={inputCls}
+            />
+            {error && <p className="text-[12px] text-red-500">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#E8521A] text-white rounded-xl py-2.5 text-[13px] font-semibold hover:bg-[#d04415] transition disabled:opacity-50"
+            >
+              {loading ? 'Creating account…' : 'Create Account →'}
+            </button>
+
+            <div className="flex items-center gap-2 my-1">
+              <span className="flex-1 h-px bg-[#E5E5E5]" />
+              <span className="text-[11px] text-[#9CA3AF]">or continue with</span>
+              <span className="flex-1 h-px bg-[#E5E5E5]" />
+            </div>
+
+            <div className="space-y-2">
+              {SOCIAL_PROVIDERS.map(({ icon, label }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="flex items-center gap-3 w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[13px] font-semibold text-[#374151] hover:border-[#1A1A1A] hover:bg-[#F5F4F0] transition"
+                >
+                  <span className="text-lg">{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-center text-[12px] text-[#9CA3AF] mt-2">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => { setActiveTab('signin'); setError(''); }}
+                className="text-[#E8521A] font-semibold hover:underline"
+              >
+                Sign in →
+              </button>
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -159,7 +362,7 @@ export function AgentsPageClient({ templates }: AgentsPageClientProps) {
         />
       )}
 
-      {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
+      {showSignIn && <AuthModal onClose={() => setShowSignIn(false)} />}
     </>
   );
 }

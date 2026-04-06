@@ -3,6 +3,16 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 
+/* ── Suggested prompts ─────────────────────────────────────── */
+const SUGGESTED_PROMPTS = [
+  { icon: '🎯', text: 'Help me plan a SaaS product from idea to launch' },
+  { icon: '💻', text: 'Write a REST API in Node.js with authentication' },
+  { icon: '📊', text: 'Analyze the pros and cons of GPT-5 vs Claude' },
+  { icon: '✍️', text: 'Write a compelling LinkedIn post about AI trends' },
+  { icon: '🔬', text: 'Summarize the latest papers on multimodal AI' },
+  { icon: '🎨', text: 'Create a brand identity for a tech startup' },
+];
+
 /* ── Types ─────────────────────────────────────────────────── */
 interface OnboardingData {
   task: string;
@@ -123,13 +133,27 @@ function ThinkingDots() {
 
 /* ── Page ───────────────────────────────────────────────────── */
 export default function ChatHubPage() {
-  const [messages, setMessages]     = useState<ChatMsg[]>([]);
-  const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
-  const [activeModel, setActiveModel] = useState('Claude Sonnet 4.6');
-  const [chatInput, setChatInput]   = useState('');
-  const [promptText, setPromptText] = useState('');
-  const [promptDone, setPromptDone] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages]         = useState<ChatMsg[]>([]);
+  const [onboarding, setOnboarding]     = useState<OnboardingData | null>(null);
+  const [activeModel, setActiveModel]   = useState('Claude Sonnet 4.6');
+  const [chatInput, setChatInput]       = useState('');
+  const [promptText, setPromptText]     = useState('');
+  const [promptDone, setPromptDone]     = useState(false);
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowModelDropdown(false);
+      }
+    }
+    if (showModelDropdown) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showModelDropdown]);
 
   /* Read sessionStorage + auto-play sequence */
   useEffect(() => {
@@ -298,6 +322,16 @@ export default function ChatHubPage() {
     }
   }
 
+  /* ── Filtered models (sidebar search) ── */
+  const filteredModels = MODELS.filter(
+    (m) =>
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.provider.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  /* ── Models grouped by provider (for input-bar dropdown) ── */
+  const providers = ['OpenAI', 'Anthropic', 'Google'] as const;
+
   /* ── Layout ── */
   return (
     <div className="flex h-[calc(100vh-64px)] bg-[#F5F4F0] overflow-hidden">
@@ -305,10 +339,16 @@ export default function ChatHubPage() {
       {/* ── Left sidebar — Models list ── */}
       <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 bg-white border-r border-[#E5E5E5] overflow-hidden">
         <div className="px-4 py-3 border-b border-[#F0EEE9]">
-          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider">AI Models</p>
+          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">AI Models</p>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search 525 models..."
+            className="w-full text-[12px] px-3 py-2 rounded-xl border border-[#E5E5E5] bg-[#F5F4F0] focus:outline-none focus:border-[#E8521A]/40 transition"
+          />
         </div>
         <div className="flex-1 overflow-y-auto py-2">
-          {MODELS.map((m) => (
+          {filteredModels.map((m) => (
             <button
               key={m.name}
               type="button"
@@ -355,8 +395,79 @@ export default function ChatHubPage() {
 
         {/* Input area */}
         <div className="bg-white border-t border-[#E5E5E5] px-4 py-3 flex-shrink-0">
-          <form onSubmit={handleChatSend} className="mb-2">
-            <div className="flex items-center gap-2 bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] px-4 py-2.5 focus-within:border-[#E8521A]/40 transition">
+
+          {/* Suggested prompts — shown only at the start of a conversation */}
+          {messages.length <= 2 && (
+            <div className="mb-3">
+              <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-2">Suggested prompts</p>
+              <div className="grid grid-cols-2 gap-2">
+                {SUGGESTED_PROMPTS.map((p) => (
+                  <button
+                    key={p.text}
+                    type="button"
+                    onClick={() => setChatInput(p.text)}
+                    className="flex items-start gap-2 bg-white rounded-xl border border-[#E5E5E5] p-3 hover:border-[#E8521A] cursor-pointer transition text-left"
+                  >
+                    <span className="text-base flex-shrink-0">{p.icon}</span>
+                    <span className="text-[11px] text-[#374151] leading-snug">{p.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pills */}
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {CHAT_PILLS.map((pill) => (
+              <button
+                key={pill}
+                type="button"
+                onClick={() => setChatInput(pill)}
+                className="text-[11px] border border-[#E5E5E5] text-[#6B7280] px-2.5 py-1 rounded-full hover:border-[#E8521A] hover:text-[#E8521A] transition"
+              >
+                {pill}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleChatSend}>
+            <div className="relative flex items-center gap-2 bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] px-3 py-2.5 focus-within:border-[#E8521A]/40 transition">
+
+              {/* Model selector pill */}
+              <div className="relative flex-shrink-0" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowModelDropdown((v) => !v)}
+                  className="flex items-center gap-1 border border-[#E5E5E5] bg-white rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#374151] hover:border-[#E8521A] transition whitespace-nowrap"
+                >
+                  {activeModel}
+                  <span className="text-[9px] text-[#9CA3AF]">▼</span>
+                </button>
+
+                {showModelDropdown && (
+                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-2xl border border-[#E5E5E5] shadow-lg py-2 z-50 max-h-72 overflow-y-auto">
+                    {providers.map((provider) => (
+                      <div key={provider}>
+                        <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-3 pt-2 pb-1">{provider}</p>
+                        {MODELS.filter((m) => m.provider === provider).map((m) => (
+                          <button
+                            key={m.name}
+                            type="button"
+                            onClick={() => { setActiveModel(m.name); setShowModelDropdown(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-left transition hover:bg-[#F5F4F0] ${
+                              activeModel === m.name ? 'text-[#E8521A] font-semibold' : 'text-[#374151]'
+                            }`}
+                          >
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${PROVIDER_COLOR[provider]}`} />
+                            {m.name}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <input
                 type="text"
                 value={chatInput}
@@ -375,20 +486,6 @@ export default function ChatHubPage() {
               </button>
             </div>
           </form>
-
-          {/* Pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {CHAT_PILLS.map((pill) => (
-              <button
-                key={pill}
-                type="button"
-                onClick={() => setChatInput(pill)}
-                className="text-[11px] border border-[#E5E5E5] text-[#6B7280] px-2.5 py-1 rounded-full hover:border-[#E8521A] hover:text-[#E8521A] transition"
-              >
-                {pill}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
