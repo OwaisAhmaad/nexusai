@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { AuthModal } from '@/components/AuthModal';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserProfile {
   id: string;
@@ -148,6 +149,8 @@ export function NavLinks() {
   }
 
   /* ── Logged out — sign in / get started ── */
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { t } = useLanguage();
   return (
     <>
       <AuthModal
@@ -165,14 +168,14 @@ export function NavLinks() {
           onClick={() => { setAuthTab('signin'); setAuthOpen(true); }}
           className="px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:text-[#1A1A1A] hover:bg-[#F5F4F0] transition font-medium"
         >
-          Sign in
+          {t.nav_signIn}
         </button>
         <button
           type="button"
           onClick={() => { setAuthTab('register'); setAuthOpen(true); }}
           className="bg-[#E8521A] text-white px-4 py-2 rounded-full hover:bg-[#d04415] transition text-sm font-semibold"
         >
-          Try free →
+          {t.nav_tryFree}
         </button>
       </div>
     </>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/Navbar';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export const metadata: Metadata = {
   title: {
@@ -20,8 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#F5F4F0]">
-        <Navbar />
-        <main className="pt-16">{children}</main>
+        <LanguageProvider>
+          <Navbar />
+          <main className="pt-16">{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   );

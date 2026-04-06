@@ -5,25 +5,15 @@ import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { NavLinks } from './NavLinks';
 import { MobileNav } from './MobileNav';
-
-const NAV_LINKS = [
-  { href: '/chat-hub',    label: 'Chat Hub' },
-  { href: '/marketplace', label: 'Marketplace' },
-  { href: '/research',    label: 'Discover New' },
-  { href: '/agents',      label: 'Agents' },
-];
-
-const LANGUAGES = [
-  { code: 'EN', label: 'English' },
-  { code: 'FR', label: 'Français' },
-  { code: 'DE', label: 'Deutsch' },
-  { code: 'ES', label: 'Español' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LANGUAGE_OPTIONS, type LangCode } from '@/lib/translations';
 
 function LanguageSelector() {
+  const { lang, setLang, t } = useLanguage();
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState('EN');
   const ref = useRef<HTMLDivElement>(null);
+
+  const current = LANGUAGE_OPTIONS.find((l) => l.code === lang) ?? LANGUAGE_OPTIONS[0];
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -40,24 +30,39 @@ function LanguageSelector() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="border border-[#E5E5E5] rounded-full px-2.5 py-1 text-[12px] font-medium text-[#6B7280] hover:border-[#1A1A1A] hover:text-[#1A1A1A] transition flex items-center gap-1"
-        aria-label="Select language"
+        className="border border-[#E5E5E5] rounded-full pl-2 pr-2.5 py-1 text-[12px] font-medium text-[#6B7280] hover:border-[#1A1A1A] hover:text-[#1A1A1A] transition flex items-center gap-1.5"
+        aria-label={t.lang_selectLabel}
       >
-        {selected} <span className="text-[10px]">▼</span>
+        <span className="text-base leading-none">{current.flag}</span>
+        <span>{current.code}</span>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="text-[#9CA3AF]">
+          <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1.5 w-32 bg-white rounded-xl border border-[#E5E5E5] shadow-lg py-1 z-50">
-          {LANGUAGES.map((lang) => (
+        <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-2xl border border-[#E5E5E5] shadow-xl py-1.5 z-50 overflow-hidden">
+          <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-3 pt-1 pb-1.5">
+            {t.lang_selectLabel}
+          </p>
+          {LANGUAGE_OPTIONS.map((option) => (
             <button
-              key={lang.code}
+              key={option.code}
               type="button"
-              onClick={() => { setSelected(lang.code); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[12px] font-medium transition hover:bg-[#F5F4F0] ${
-                selected === lang.code ? 'text-[#E8521A]' : 'text-[#374151]'
+              onClick={() => { setLang(option.code as LangCode); setOpen(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition hover:bg-[#F5F4F0] ${
+                lang === option.code
+                  ? 'text-[#E8521A] font-semibold bg-[#FFF8F5]'
+                  : 'text-[#374151] font-medium'
               }`}
             >
-              {lang.code} — {lang.label}
+              <span className="text-base leading-none w-5 flex-shrink-0">{option.flag}</span>
+              <span className="flex-1 text-left">{option.label}</span>
+              {lang === option.code && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6L5 9L10 3" stroke="#E8521A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
             </button>
           ))}
         </div>
@@ -68,6 +73,14 @@ function LanguageSelector() {
 
 export function Navbar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
+
+  const NAV_LINKS = [
+    { href: '/chat-hub',    label: t.nav_chatHub      },
+    { href: '/marketplace', label: t.nav_marketplace  },
+    { href: '/research',    label: t.nav_discoverNew  },
+    { href: '/agents',      label: t.nav_agents       },
+  ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border h-16">
