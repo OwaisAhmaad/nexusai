@@ -47,6 +47,22 @@ export function NavLinks() {
       .catch(() => setUser(null));
   }, []);
 
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'nexusai_token' && e.newValue) {
+        const token = getToken();
+        if (!token) return;
+        apiFetch<{ data: UserProfile }>('/api/v1/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => setUser(res.data))
+          .catch(() => setUser(null));
+      }
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   /* Close dropdown on outside click */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -159,7 +175,7 @@ export function NavLinks() {
         defaultTab={authTab}
         onSuccess={() => {
           setAuthOpen(false);
-          router.refresh();
+          window.location.reload();
         }}
       />
       <div className="hidden md:flex items-center gap-2">

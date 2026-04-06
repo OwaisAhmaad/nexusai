@@ -314,11 +314,13 @@ export default function ResearchPage() {
       {/* Top section */}
       <div className="bg-white border-b border-[#E5E5E5] px-6 py-5 flex justify-between items-start flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-black text-[#1A1A1A]">AI Research Feed</h1>
+          <div className="border-l-4 border-[#E8521A] pl-3">
+            <h1 className="text-[22px] font-black text-[#1A1A1A]">AI Research Feed</h1>
+          </div>
           <p className="text-[#6B7280] text-sm mt-1">Curated breakthroughs · Updated daily</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-[#F5F4F0] border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151]">
+          <span className="bg-[#FFF8F5] border border-[#E8521A]/20 rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#E8521A]">
             + 6 papers this week
           </span>
           <button
@@ -331,7 +333,7 @@ export default function ResearchPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="bg-white border-b border-[#E5E5E5] px-6 py-2 flex gap-1 overflow-x-auto flex-shrink-0">
+      <div className="bg-white border-b border-[#E5E5E5] px-6 py-3 flex gap-1 overflow-x-auto flex-shrink-0">
         {FILTER_TABS.map((tab) => (
           <button
             key={tab.match}
@@ -340,7 +342,7 @@ export default function ResearchPage() {
             className={
               activeFilter === tab.match
                 ? 'bg-[#E8521A] text-white rounded-full px-4 py-1.5 text-[13px] font-semibold whitespace-nowrap'
-                : 'text-[#6B7280] px-4 py-1.5 text-[13px] hover:text-[#1A1A1A] whitespace-nowrap transition'
+                : 'text-[#6B7280] px-3 py-1.5 rounded-full text-[13px] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] whitespace-nowrap transition'
             }
           >
             {tab.label}
@@ -365,25 +367,29 @@ export default function ResearchPage() {
               <div
                 key={paper.id}
                 onClick={() => setSelectedPaper(paper)}
-                className={`p-4 border-b border-[#F0EEE9] cursor-pointer transition ${
+                className={`px-4 py-3.5 border-b border-[#F0EEE9] cursor-pointer transition-all ${
                   selectedPaper?.id === paper.id
-                    ? 'border-l-4 border-l-[#E8521A] bg-[#FFF8F5]'
-                    : 'border-l-4 border-l-transparent hover:bg-[#F5F4F0]'
+                    ? 'border-l-[3px] border-l-[#E8521A] bg-[#FFF8F5]'
+                    : 'border-l-[3px] border-l-transparent hover:bg-[#F9F8F5]'
                 }`}
               >
-                <div className="text-[20px] font-black text-[#D1D5DB] mb-1">
-                  {sidebarDate(paper)}
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[11px] text-[#6B7280] font-medium">{paper.lab}</span>
+                {/* Date + Lab row */}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-widest">
+                    {sidebarDate(paper)}
+                  </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${paper.categoryColor}`}>
                     {paper.category}
                   </span>
                 </div>
-                <p className="text-[13px] font-bold text-[#1A1A1A] leading-snug mb-1">
+                {/* Lab */}
+                <p className="text-[11px] text-[#6B7280] font-medium mb-1">{paper.lab}</p>
+                {/* Title */}
+                <p className="text-[13px] font-bold text-[#1A1A1A] leading-snug mb-1.5 line-clamp-2">
                   {paper.title}
                 </p>
-                <p className="text-[11px] text-[#6B7280] leading-relaxed line-clamp-2">
+                {/* Description */}
+                <p className="text-[11px] text-[#9CA3AF] leading-relaxed line-clamp-2">
                   {paper.desc}
                 </p>
               </div>
@@ -403,7 +409,7 @@ export default function ResearchPage() {
                 {headerDate(selectedPaper)}
               </span>
             </div>
-            <h2 className="text-2xl font-black text-[#1A1A1A] leading-tight mb-2">
+            <h2 className="text-[26px] font-black text-[#1A1A1A] leading-tight mb-2">
               {selectedPaper.title}
             </h2>
             {selectedPaper.authors && (
@@ -414,9 +420,7 @@ export default function ResearchPage() {
 
             {/* Overview */}
             <section className="mb-8">
-              <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                OVERVIEW
-              </h3>
+              <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">OVERVIEW</h3></div>
               <p className="text-[14px] text-[#374151] leading-relaxed">
                 {selectedPaper.fullDesc ?? selectedPaper.desc}
               </p>
@@ -428,7 +432,7 @@ export default function ResearchPage() {
                 {selectedPaper.metrics.map((m) => (
                   <div
                     key={m.label}
-                    className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center"
+                    className="bg-white rounded-2xl border border-[#E5E5E5] p-4 text-center shadow-sm"
                   >
                     <p className="text-2xl font-black text-[#1A1A1A]">{m.value}</p>
                     <p className="text-[11px] text-[#6B7280] mt-1">{m.label}</p>
@@ -440,9 +444,7 @@ export default function ResearchPage() {
             {/* Key findings */}
             {selectedPaper.findings && selectedPaper.findings.length > 0 && (
               <section className="mb-8">
-                <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                  KEY FINDINGS
-                </h3>
+                <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">KEY FINDINGS</h3></div>
                 <ol className="space-y-2">
                   {selectedPaper.findings.map((f, i) => (
                     <li key={i} className="flex gap-3 text-[14px] text-[#374151]">
@@ -457,9 +459,7 @@ export default function ResearchPage() {
             {/* Models referenced */}
             {selectedPaper.models && selectedPaper.models.length > 0 && (
               <section className="mb-8">
-                <h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">
-                  MODELS REFERENCED
-                </h3>
+                <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">MODELS REFERENCED</h3></div>
                 <div className="flex flex-wrap gap-2">
                   {selectedPaper.models.map((m) => (
                     <span
@@ -475,7 +475,7 @@ export default function ResearchPage() {
 
             {/* Impact */}
             {selectedPaper.impact && (
-              <div className="bg-[#FFF8F5] border-l-4 border-[#E8521A] rounded-r-xl p-4 mb-8">
+              <div className="bg-[#FFF8F5] border-l-4 border-[#E8521A] rounded-2xl p-4 mb-8 shadow-sm">
                 <p className="text-[13px] font-bold text-[#E8521A] mb-1">⚡ IMPACT ASSESSMENT</p>
                 <p className="text-[13px] text-[#374151]">{selectedPaper.impact}</p>
               </div>
