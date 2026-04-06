@@ -401,107 +401,140 @@ export default function ResearchPage() {
         </div>
 
         {/* Right detail */}
-        <div className="flex-1 overflow-y-auto bg-[#F5F4F0]">
-          <div className="p-8 max-w-3xl">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${selectedPaper.categoryColor}`}>
-                {selectedPaper.category}
-              </span>
-              <span className="text-[#6B7280] text-[13px]">{selectedPaper.lab}</span>
-              <span className="text-[#9CA3AF] text-[13px] ml-auto">
-                {headerDate(selectedPaper)}
-              </span>
-            </div>
-            <h2 className="text-[26px] font-black text-[#1A1A1A] leading-tight mb-2">
-              {selectedPaper.title}
-            </h2>
-            {selectedPaper.authors && (
-              <p className="text-[13px] text-[#6B7280] mb-6">
-                Authors: {selectedPaper.authors}
-              </p>
-            )}
+        <div className="flex-1 flex flex-col min-h-0 bg-white">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-8 max-w-3xl">
+              {/* Header — lab · date + category badge */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="text-[13px] font-semibold text-[#1A1A1A]">{selectedPaper.lab}</span>
+                <span className="text-[#9CA3AF] text-[13px]">·</span>
+                <span className="text-[#6B7280] text-[13px]">{headerDate(selectedPaper)}</span>
+                <span className={`ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${selectedPaper.categoryColor}`}>
+                  {selectedPaper.category}
+                </span>
+              </div>
 
-            {/* Overview */}
-            <section className="mb-8">
-              <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">OVERVIEW</h3></div>
-              <p className="text-[14px] text-[#374151] leading-relaxed">
+              {/* Title */}
+              <h2 className="text-[24px] font-black text-[#1A1A1A] leading-tight mb-2">
+                {selectedPaper.title}
+              </h2>
+
+              {/* arXiv + authors */}
+              {(selectedPaper.arxiv || selectedPaper.authors) && (
+                <p className="text-[12px] text-[#6B7280] mb-5">
+                  {selectedPaper.arxiv && <span className="text-[#1D4ED8]">{selectedPaper.arxiv}</span>}
+                  {selectedPaper.arxiv && selectedPaper.authors && <span> · </span>}
+                  {selectedPaper.authors && <span>{selectedPaper.authors}</span>}
+                </p>
+              )}
+
+              {/* Overview */}
+              <p className="text-[14px] text-[#374151] leading-relaxed mb-8">
                 {selectedPaper.fullDesc ?? selectedPaper.desc}
               </p>
-            </section>
 
-            {/* Metrics */}
-            {selectedPaper.metrics && selectedPaper.metrics.length > 0 && (
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                {selectedPaper.metrics.map((m) => (
-                  <div
-                    key={m.label}
-                    className="bg-white rounded-2xl border border-[#E5E5E5] p-4 text-center shadow-sm"
-                  >
-                    <p className="text-2xl font-black text-[#1A1A1A]">{m.value}</p>
-                    <p className="text-[11px] text-[#6B7280] mt-1">{m.label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Key findings */}
-            {selectedPaper.findings && selectedPaper.findings.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">KEY FINDINGS</h3></div>
-                <ol className="space-y-2">
-                  {selectedPaper.findings.map((f, i) => (
-                    <li key={i} className="flex gap-3 text-[14px] text-[#374151]">
-                      <span className="text-[#E8521A] font-bold flex-shrink-0">{i + 1}.</span>
-                      {f}
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-
-            {/* Models referenced */}
-            {selectedPaper.models && selectedPaper.models.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center gap-2 mb-3"><div className="w-1 h-3 bg-[#E8521A] rounded-full"/><h3 className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">MODELS REFERENCED</h3></div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPaper.models.map((m) => (
-                    <span
-                      key={m}
-                      className="bg-[#F5F4F0] border border-[#E5E5E5] text-[#374151] text-[12px] font-semibold px-3 py-1.5 rounded-full"
+              {/* Metrics */}
+              {selectedPaper.metrics && selectedPaper.metrics.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  {selectedPaper.metrics.map((m) => (
+                    <div
+                      key={m.label}
+                      className="bg-[#F5F4F0] rounded-xl border border-[#E5E5E5] p-5 text-center"
                     >
-                      {m}
-                    </span>
+                      <p className="text-[22px] font-black text-[#1A1A1A]">{m.value}</p>
+                      <p className="text-[11px] text-[#6B7280] mt-1">{m.label}</p>
+                    </div>
                   ))}
                 </div>
-              </section>
-            )}
+              )}
 
-            {/* Impact */}
-            {selectedPaper.impact && (
-              <div className="bg-[#FFF8F5] border-l-4 border-[#E8521A] rounded-2xl p-4 mb-8 shadow-sm">
-                <p className="text-[13px] font-bold text-[#E8521A] mb-1">⚡ IMPACT ASSESSMENT</p>
-                <p className="text-[13px] text-[#374151]">{selectedPaper.impact}</p>
-              </div>
-            )}
+              {/* Key findings */}
+              {selectedPaper.findings && selectedPaper.findings.length > 0 && (
+                <section className="mb-8">
+                  <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-3">KEY FINDINGS</p>
+                  <div className="space-y-2">
+                    {selectedPaper.findings.map((f, i) => (
+                      <div key={i} className="flex gap-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg px-4 py-3">
+                        <span className="text-[#E8521A] font-bold text-[13px] flex-shrink-0 w-4">{i + 1}.</span>
+                        <span className="text-[13px] text-[#374151] leading-snug">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            {/* Citation */}
-            {selectedPaper.citation && (
-              <div className="bg-white rounded-xl border border-[#E5E5E5] p-4">
-                <p className="text-[12px] text-[#6B7280] mb-2">{selectedPaper.citation}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#E8521A] text-[12px] font-semibold">
-                    {selectedPaper.arxiv} ↗
-                  </span>
-                  <button
-                    type="button"
-                    className="text-[11px] border border-[#E5E5E5] px-3 py-1.5 rounded-lg font-medium text-[#6B7280] hover:bg-[#F5F4F0]"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            )}
+              {/* Models referenced */}
+              {selectedPaper.models && selectedPaper.models.length > 0 && (
+                <section className="mb-8">
+                  <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-3">MODELS REFERENCED</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPaper.models.map((m) => (
+                      <span
+                        key={m}
+                        className="bg-white border border-[#E5E5E5] text-[#374151] text-[12px] font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5"
+                      >
+                        <span className="w-4 h-4 rounded-full bg-[#F5F4F0] flex items-center justify-center text-[9px]">🤖</span>
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Impact */}
+              {selectedPaper.impact && (
+                <section className="mb-8">
+                  <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-3">IMPACT ASSESSMENT</p>
+                  <div className="bg-[#FFF8F5] border border-[#FDDCCA] rounded-lg px-4 py-3 flex gap-3 items-start">
+                    <span className="text-[#E8521A] text-[14px] flex-shrink-0">⚡</span>
+                    <p className="text-[13px] text-[#374151]">{selectedPaper.impact}</p>
+                  </div>
+                </section>
+              )}
+
+              {/* Citation */}
+              {selectedPaper.citation && (
+                <section className="mb-4">
+                  <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest mb-3">CITATION</p>
+                  <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg p-4 relative">
+                    <p className="text-[12px] text-[#6B7280] leading-relaxed pr-16">
+                      {selectedPaper.citation}
+                    </p>
+                    <button
+                      type="button"
+                      className="absolute top-3 right-3 text-[11px] border border-[#E5E5E5] bg-white px-3 py-1 rounded-md font-medium text-[#6B7280] hover:bg-[#F5F4F0] transition"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </section>
+              )}
+            </div>
+          </div>
+
+          {/* Sticky bottom bar */}
+          <div className="flex-shrink-0 border-t border-[#E5E5E5] bg-white px-6 py-3 flex items-center gap-3">
+            <button
+              type="button"
+              className="flex-1 bg-[#E8521A] hover:bg-[#d04415] text-white font-semibold text-[14px] py-3 rounded-full flex items-center justify-center gap-2 transition"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Discuss in Chat Hub
+            </button>
+            <button
+              type="button"
+              className="border border-[#E5E5E5] text-[#374151] font-semibold text-[13px] px-4 py-3 rounded-full hover:bg-[#F5F4F0] transition flex items-center gap-1.5"
+            >
+              🔖 Save
+            </button>
+            <button
+              type="button"
+              className="border border-[#E5E5E5] text-[#374151] font-semibold text-[13px] px-4 py-3 rounded-full hover:bg-[#F5F4F0] transition flex items-center gap-1.5"
+            >
+              🔗 Share
+            </button>
           </div>
         </div>
       </div>
