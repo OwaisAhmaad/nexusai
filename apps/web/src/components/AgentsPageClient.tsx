@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from './AuthModal';
 import { CreateAgentModal } from './CreateAgentModal';
-import { MediaToolbar } from './MediaToolbar';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -111,7 +110,7 @@ function TaskRow({ label }: { label: string }) {
         onChange={() => setChecked(!checked)}
         className="rounded accent-[#E8521A]"
       />
-      <span className="text-[13px] text-[#374151] flex-1 truncate">{label}</span>
+      <span className={`text-[13px] flex-1 truncate transition ${checked ? 'line-through text-[#9CA3AF]' : 'text-[#374151]'}`}>{label}</span>
       <button
         type="button"
         className="opacity-0 group-hover:opacity-100 text-[#9CA3AF] text-[16px] leading-none"
@@ -262,7 +261,7 @@ export function AgentsPageClient() {
           </div>
 
           {/* Task list */}
-          <div className="mt-6">
+          <div className="mt-6 flex-1">
             <div className="flex justify-between items-center mb-2">
               <span className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
                 Tasks
@@ -277,6 +276,21 @@ export function AgentsPageClient() {
             {TASKS.map((task) => (
               <TaskRow key={task} label={task} />
             ))}
+          </div>
+
+          {/* Create Agent promo card */}
+          <div className="mt-auto pt-4 border-t border-[#F0EEE9]">
+            <div className="bg-[#1A1A1A] rounded-xl p-3 text-white">
+              <p className="text-[12px] font-bold mb-1">🤖 Create Agent</p>
+              <p className="text-[10px] text-[#9CA3AF] leading-relaxed">Build a custom AI agent with any model</p>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="mt-2 w-full bg-[#E8521A] text-white text-[11px] font-bold py-1.5 rounded-lg hover:bg-[#d04415] transition"
+              >
+                Get started →
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -293,76 +307,110 @@ export function AgentsPageClient() {
             </p>
           </div>
 
-          {/* Chat input */}
+          {/* Chat input card */}
           <div className="mt-5 bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden">
-            <div className="p-4 pb-2">
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="What should we work on next?"
-                className="w-full text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
-                rows={3}
-              />
-            </div>
-            {/* Media toolbar */}
-            <div className="border-t border-[#F0EEE9]">
-              {/* Attachment chips */}
-              {(attachedFiles.length > 0 || attachedImages.length > 0) && (
-                <div className="flex flex-wrap gap-1.5 px-3 pt-2">
-                  {attachedFiles.map((f, i) => (
-                    <div key={i} className="flex items-center gap-1 bg-[#F5F4F0] border border-[#E5E5E5] rounded-lg px-2 py-1 text-[11px] text-[#374151]">
-                      <span>📎</span>
-                      <span className="max-w-[120px] truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))}
-                        className="text-[#9CA3AF] hover:text-[#E8521A] ml-0.5"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                  {attachedImages.map((url, i) => (
-                    <div key={i} className="relative">
-                      <img src={url} alt="attached" className="w-10 h-10 rounded-lg object-cover border border-[#E5E5E5]" />
-                      <button
-                        type="button"
-                        onClick={() => setAttachedImages(prev => prev.filter((_, j) => j !== i))}
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E8521A] text-white text-[8px] flex items-center justify-center"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <MediaToolbar
-                onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
-                onAttachFile={(f) => {
-                  setAttachedFiles(prev => [...prev, { name: f.name, type: f.type }]);
-                  setChatInput(prev => prev + (prev ? ' ' : '') + `[📎 ${f.name}]`);
-                }}
-                onAttachImage={(_, url) => {
-                  setAttachedImages(prev => [...prev, url]);
-                }}
-                showAgentPill={false}
-              />
-              {/* Agent pill + send */}
-              <div className="flex justify-end items-center gap-2 px-3 pb-3">
-                <button
-                  type="button"
-                  className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151] hover:border-[#1A1A1A] transition"
-                >
+            {/* Textarea */}
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e as unknown as React.MouseEvent<HTMLButtonElement>);
+                }
+              }}
+              placeholder="What should we work on next?"
+              className="w-full px-5 pt-4 pb-2 text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
+              rows={3}
+            />
+
+            {/* Attachment chips (only when files attached) */}
+            {(attachedFiles.length > 0 || attachedImages.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+                {attachedFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1 bg-[#F5F4F0] border border-[#E5E5E5] rounded-lg px-2 py-1 text-[11px] text-[#374151]">
+                    <span>📎</span>
+                    <span className="max-w-[120px] truncate">{f.name}</span>
+                    <button type="button" onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))} className="text-[#9CA3AF] hover:text-[#E8521A] ml-0.5">✕</button>
+                  </div>
+                ))}
+                {attachedImages.map((url, i) => (
+                  <div key={i} className="relative">
+                    <img src={url} alt="attached" className="w-10 h-10 rounded-lg object-cover border border-[#E5E5E5]" />
+                    <button type="button" onClick={() => setAttachedImages(prev => prev.filter((_, j) => j !== i))} className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E8521A] text-white text-[8px] flex items-center justify-center">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bottom toolbar — icons LEFT, controls RIGHT — all one row */}
+            <div className="border-t border-[#F0EEE9] px-4 py-2.5 flex items-center justify-between gap-2">
+              {/* Left: media icons */}
+              <div className="flex items-center gap-1">
+                {/* Microphone */}
+                <button type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </button>
+                {/* Paperclip — file attach */}
+                <label className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition cursor-pointer">
+                  <input type="file" className="hidden" onChange={(e) => {
+                    const f = e.target.files?.[0]; if (!f) return;
+                    setAttachedFiles(prev => [...prev, { name: f.name, type: f.type }]);
+                    setChatInput(prev => prev + (prev ? ' ' : '') + `[📎 ${f.name}]`);
+                    e.target.value = '';
+                  }} />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                </label>
+                {/* Image */}
+                <label className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition cursor-pointer">
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                    const f = e.target.files?.[0]; if (!f) return;
+                    const url = URL.createObjectURL(f);
+                    setAttachedImages(prev => [...prev, url]);
+                    e.target.value = '';
+                  }} />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                  </svg>
+                </label>
+                {/* Sparkle / AI enhance */}
+                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                  </svg>
+                </button>
+                {/* Video */}
+                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m22 8-6 4 6 4V8z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+                  </svg>
+                </button>
+                {/* Screen share */}
+                <button type="button" className="w-8 h-8 flex items-center justify-center rounded-lg text-[#6B7280] hover:bg-[#F5F4F0] hover:text-[#1A1A1A] transition">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="20" height="15" x="2" y="3" rx="2"/><polyline points="8 21 12 17 16 21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                </button>
+              </div>
+              {/* Right: Agent pill + send */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button type="button"
+                  className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151] hover:border-[#1A1A1A] transition">
                   Agent ▼
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSend}
+                <button type="button" onClick={handleSend}
                   className="w-9 h-9 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition"
-                  aria-label="Send"
-                >
+                  aria-label="Send">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" />
+                    <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" strokeLinejoin="round"/>
                   </svg>
                 </button>
               </div>
@@ -396,15 +444,18 @@ export function AgentsPageClient() {
             {displayedSuggestions.map((s, i) => (
               <div
                 key={`${s.text}-${i}`}
-                className="flex items-center gap-3 py-2.5 cursor-pointer hover:text-[#E8521A] transition group border-b border-[#F5F4F0] last:border-0"
+                className="flex items-center gap-3 py-2.5 cursor-pointer group border-b border-[#F5F4F0] last:border-0"
                 onClick={() => setChatInput(s.text)}
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F5F4F0] to-[#E5E5E5] flex items-center justify-center text-base flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[#F5F4F0] flex items-center justify-center text-sm flex-shrink-0 group-hover:bg-[#FFF3EE] transition">
                   {s.icon}
                 </div>
-                <span className="text-[14px] text-[#374151] group-hover:text-[#E8521A] transition">
+                <span className="flex-1 text-[14px] text-[#374151] group-hover:text-[#E8521A] transition leading-snug">
                   {s.text}
                 </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#9CA3AF] opacity-0 group-hover:opacity-100 flex-shrink-0 transition">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
               </div>
             ))}
 
@@ -440,11 +491,11 @@ export function AgentsPageClient() {
               {agentTemplates.map((tpl) => (
                 <div
                   key={tpl.name}
-                  className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-[#E5E5E5] p-4 hover:shadow-md transition cursor-pointer"
+                  className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-[#E5E5E5] p-4 hover:shadow-md transition cursor-pointer group flex flex-col"
                 >
                   <div className="w-10 h-10 rounded-xl bg-[#F5F4F0] flex items-center justify-center text-2xl mb-3">{tpl.icon}</div>
                   <p className="font-bold text-[#1A1A1A] text-[14px]">{tpl.name}</p>
-                  <p className="text-[12px] text-[#6B7280] mt-1">{tpl.desc}</p>
+                  <p className="text-[12px] text-[#6B7280] mt-1 flex-1">{tpl.desc}</p>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {tpl.tags.map((tag, ti) => (
                       <span
@@ -455,6 +506,13 @@ export function AgentsPageClient() {
                       </span>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(true)}
+                    className="mt-3 w-full text-[11px] font-semibold text-[#E8521A] border border-[#E8521A]/30 rounded-lg py-1.5 opacity-0 group-hover:opacity-100 hover:bg-[#E8521A] hover:text-white transition"
+                  >
+                    Use template →
+                  </button>
                 </div>
               ))}
 
