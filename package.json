@@ -1,7 +1,10 @@
 {
   "name": "nexusai",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=apps/api\" \"npm run dev --workspace=apps/web\" --names \"api,web\" --prefix-colors \"magenta,cyan\"",
     "dev:api": "npm run dev --workspace=apps/api",
@@ -13,6 +16,7 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "mongodb-memory-server": "^11.0.1",
     "turbo": "^2.0.0",
     "typescript": "^5.3.3"
   },
