@@ -22,6 +22,15 @@ export class User {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: 'local' })
+  provider: string;
+
+  @Prop()
+  providerId?: string;
+
+  @Prop()
+  avatar?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

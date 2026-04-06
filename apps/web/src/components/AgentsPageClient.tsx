@@ -137,6 +137,10 @@ export function AgentsPageClient() {
   const [chatInput, setChatInput] = useState('');
   const [agentTemplates, setAgentTemplates] = useState<AgentTemplate[]>(STATIC_AGENT_TEMPLATES);
 
+  /* Attachment state */
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; type: string }[]>([]);
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+
   /* Shuffle state */
   const shuffleOffset = useRef(0);
   const [shuffleIdx, setShuffleIdx] = useState(0);
@@ -202,6 +206,15 @@ export function AgentsPageClient() {
     const next = (shuffleOffset.current + 1) % currentSuggestions.length;
     shuffleOffset.current = next;
     setShuffleIdx(next);
+  }
+
+  function handleSend(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    if (!chatInput.trim() && attachedFiles.length === 0 && attachedImages.length === 0) return;
+    // Message would be sent here
+    setChatInput('');
+    setAttachedFiles([]);
+    setAttachedImages([]);
   }
 
   if (!authChecked) return null;
@@ -293,10 +306,45 @@ export function AgentsPageClient() {
             </div>
             {/* Media toolbar */}
             <div className="border-t border-[#F0EEE9]">
+              {/* Attachment chips */}
+              {(attachedFiles.length > 0 || attachedImages.length > 0) && (
+                <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+                  {attachedFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-1 bg-[#F5F4F0] border border-[#E5E5E5] rounded-lg px-2 py-1 text-[11px] text-[#374151]">
+                      <span>📎</span>
+                      <span className="max-w-[120px] truncate">{f.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))}
+                        className="text-[#9CA3AF] hover:text-[#E8521A] ml-0.5"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {attachedImages.map((url, i) => (
+                    <div key={i} className="relative">
+                      <img src={url} alt="attached" className="w-10 h-10 rounded-lg object-cover border border-[#E5E5E5]" />
+                      <button
+                        type="button"
+                        onClick={() => setAttachedImages(prev => prev.filter((_, j) => j !== i))}
+                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E8521A] text-white text-[8px] flex items-center justify-center"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <MediaToolbar
                 onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
-                onAttachFile={(f) => console.log('attach:', f.name)}
-                onAttachImage={(_, url) => console.log('image:', url)}
+                onAttachFile={(f) => {
+                  setAttachedFiles(prev => [...prev, { name: f.name, type: f.type }]);
+                  setChatInput(prev => prev + (prev ? ' ' : '') + `[📎 ${f.name}]`);
+                }}
+                onAttachImage={(_, url) => {
+                  setAttachedImages(prev => [...prev, url]);
+                }}
                 showAgentPill={false}
               />
               {/* Agent pill + send */}
@@ -309,6 +357,7 @@ export function AgentsPageClient() {
                 </button>
                 <button
                   type="button"
+                  onClick={handleSend}
                   className="w-9 h-9 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition"
                   aria-label="Send"
                 >

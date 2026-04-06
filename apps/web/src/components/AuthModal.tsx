@@ -283,6 +283,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
                 <div className="flex gap-2">
                   {OAUTH_BUTTONS.map((btn) => (
                     <button key={btn.key} type="button"
+                      onClick={() => { window.location.href = `${API}/api/v1/auth/${btn.key}`; }}
                       className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-[#E5E5E5] rounded-xl py-2.5 text-[12px] font-medium text-[#374151] hover:bg-[#F5F4F0] transition">
                       {btn.icon}<span>{btn.label}</span>
                     </button>
@@ -337,6 +338,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
                 <div className="flex gap-2">
                   {OAUTH_BUTTONS.map((btn) => (
                     <button key={btn.key} type="button"
+                      onClick={() => { window.location.href = `${API}/api/v1/auth/${btn.key}`; }}
                       className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-[#E5E5E5] rounded-xl py-2.5 text-[12px] font-medium text-[#374151] hover:bg-[#F5F4F0] transition">
                       {btn.icon}<span>{btn.label}</span>
                     </button>

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -95,6 +96,42 @@ export class AuthController {
   async getSessions(@CurrentUser() user: JwtPayload) {
     const sessions = await this.authService.getSessions(user.sub);
     return { data: sessions };
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  googleAuth() {
+    // Passport redirects to Google — no body needed
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiResponse({ status: 302, description: 'Google OAuth callback — redirects to frontend' })
+  async googleCallback(@Req() req: any, @Res() res: Response) {
+    const token = await this.authService.generateTokenForUser(req.user);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=google`);
+  }
+
+  @Public()
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth' })
+  githubAuth() {
+    // Passport redirects to GitHub — no body needed
+  }
+
+  @Public()
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  @ApiResponse({ status: 302, description: 'GitHub OAuth callback — redirects to frontend' })
+  async githubCallback(@Req() req: any, @Res() res: Response) {
+    const token = await this.authService.generateTokenForUser(req.user);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=github`);
   }
 
   private setRefreshCookie(res: Response, token: string) {

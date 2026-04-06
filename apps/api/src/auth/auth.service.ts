@@ -155,6 +155,41 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async findOrCreateOAuthUser(data: {
+    provider: string;
+    providerId: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  }): Promise<UserDocument> {
+    let user = await this.userModel.findOne({ email: data.email }).exec();
+    if (!user) {
+      user = await new this.userModel({
+        name: data.name,
+        email: data.email,
+        password: `oauth_${data.provider}_${data.providerId}`,
+        role: 'user',
+        provider: data.provider,
+        providerId: data.providerId,
+        avatar: data.avatar,
+      }).save();
+    }
+    return user;
+  }
+
+  async generateTokenForUser(user: UserDocument): Promise<string> {
+    const payload = {
+      sub: (user._id as Types.ObjectId).toString(),
+      email: user.email,
+      role: user.role ?? 'user',
+      sessionId: '',
+    };
+    return this.jwtService.sign(payload, {
+      secret: this.config.get<string>('JWT_SECRET'),
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '15m'),
+    });
+  }
+
   private sanitizeUser(user: UserDocument) {
     return {
       id: (user._id as Types.ObjectId).toString(),

@@ -7,11 +7,14 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SessionRepository } from './repositories/session.repository';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 import { Session, SessionSchema } from './schemas/session.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
+    ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -29,7 +32,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionRepository, JwtStrategy],
+  providers: [AuthService, SessionRepository, JwtStrategy, GoogleStrategy, GithubStrategy],
   exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}
