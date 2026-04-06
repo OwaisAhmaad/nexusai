@@ -261,9 +261,9 @@ export default function ResearchPage() {
         );
 
   return (
-    <div className="min-h-screen bg-[#F5F4F0] flex flex-col">
+    <div className="bg-[#F5F4F0] flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Top section */}
-      <div className="bg-white border-b border-[#E5E5E5] px-6 py-5 flex justify-between items-start">
+      <div className="bg-white border-b border-[#E5E5E5] px-6 py-5 flex justify-between items-start flex-shrink-0">
         <div>
           <h1 className="text-2xl font-black text-[#1A1A1A]">AI Research Feed</h1>
           <p className="text-[#6B7280] text-sm mt-1">Curated breakthroughs · Updated daily</p>
@@ -282,7 +282,7 @@ export default function ResearchPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="bg-white border-b border-[#E5E5E5] px-6 py-2 flex gap-2 overflow-x-auto">
+      <div className="bg-white border-b border-[#E5E5E5] px-6 py-2 flex gap-2 overflow-x-auto flex-shrink-0">
         {FILTER_TABS.map((tab) => (
           <button
             key={tab}
@@ -300,7 +300,7 @@ export default function ResearchPage() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 h-[calc(100vh-180px)]">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left list */}
         <div className="w-[280px] flex-shrink-0 bg-white border-r border-[#E5E5E5] overflow-y-auto">
           {loading && (

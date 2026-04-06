@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { MediaToolbar } from '@/components/MediaToolbar';
 
 /* ── Types ──────────────────────────────────────────────────── */
 type Step = 0 | 1 | 2 | 3;
@@ -396,20 +397,37 @@ export default function HomePage() {
               }}
               className="max-w-2xl mx-auto mb-4"
             >
-              <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-md px-4 py-3.5 flex items-center gap-3 focus-within:border-[#E8521A]/40 transition">
-                <input
-                  type="text"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="What do you want to build today?..."
-                  className="flex-1 text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none bg-transparent"
+              <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-md focus-within:border-[#E8521A]/40 transition overflow-hidden">
+                {/* Top row — input + status icons */}
+                <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+                  <input
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    placeholder="Listening... speak now"
+                    className="flex-1 text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none bg-transparent"
+                  />
+                  {/* Star + record indicator */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-[#E8521A] flex items-center justify-center">
+                      <div className="w-3 h-3 rounded-full bg-white" />
+                    </div>
+                  </div>
+                </div>
+                {/* Divider */}
+                <div className="h-px bg-[#F0EEE9] mx-3" />
+                {/* Bottom toolbar */}
+                <MediaToolbar
+                  onVoiceTranscript={(t) => setTextInput(t)}
+                  onAttachFile={(f) => console.log('file:', f.name)}
+                  onAttachImage={(_, url) => console.log('image:', url)}
+                  showAgentPill
+                  submitLabel="Let's go"
+                  onSubmit={() => startQuiz(textInput.trim() || undefined)}
                 />
-                <button
-                  type="submit"
-                  className="bg-[#E8521A] text-white px-5 py-2 rounded-full font-bold text-[13px] hover:bg-[#d04415] transition whitespace-nowrap flex-shrink-0"
-                >
-                  🔍 Let&apos;s go
-                </button>
               </div>
             </form>
 

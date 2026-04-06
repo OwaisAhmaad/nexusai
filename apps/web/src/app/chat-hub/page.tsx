@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
+import { MediaToolbar } from '@/components/MediaToolbar';
 
 /* ── Suggested prompts ─────────────────────────────────────── */
 const SUGGESTED_PROMPTS = [
@@ -431,59 +432,76 @@ export default function ChatHubPage() {
           </div>
 
           <form onSubmit={handleChatSend}>
-            <div className="relative flex items-center gap-2 bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] px-3 py-2.5 focus-within:border-[#E8521A]/40 transition">
+            <div className="bg-[#F5F4F0] rounded-2xl border border-[#E5E5E5] focus-within:border-[#E8521A]/40 transition overflow-hidden">
+              {/* Input row */}
+              <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+                {/* Model selector */}
+                <div className="relative flex-shrink-0" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowModelDropdown((v) => !v)}
+                    className="flex items-center gap-1 border border-[#E5E5E5] bg-white rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#374151] hover:border-[#E8521A] transition whitespace-nowrap"
+                  >
+                    {activeModel}
+                    <span className="text-[9px] text-[#9CA3AF]">▼</span>
+                  </button>
 
-              {/* Model selector pill */}
-              <div className="relative flex-shrink-0" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowModelDropdown((v) => !v)}
-                  className="flex items-center gap-1 border border-[#E5E5E5] bg-white rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#374151] hover:border-[#E8521A] transition whitespace-nowrap"
-                >
-                  {activeModel}
-                  <span className="text-[9px] text-[#9CA3AF]">▼</span>
-                </button>
+                  {showModelDropdown && (
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-2xl border border-[#E5E5E5] shadow-lg py-2 z-50 max-h-72 overflow-y-auto">
+                      {providers.map((provider) => (
+                        <div key={provider}>
+                          <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-3 pt-2 pb-1">{provider}</p>
+                          {MODELS.filter((m) => m.provider === provider).map((m) => (
+                            <button
+                              key={m.name}
+                              type="button"
+                              onClick={() => { setActiveModel(m.name); setShowModelDropdown(false); }}
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-left transition hover:bg-[#F5F4F0] ${
+                                activeModel === m.name ? 'text-[#E8521A] font-semibold' : 'text-[#374151]'
+                              }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${PROVIDER_COLOR[provider]}`} />
+                              {m.name}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                {showModelDropdown && (
-                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-2xl border border-[#E5E5E5] shadow-lg py-2 z-50 max-h-72 overflow-y-auto">
-                    {providers.map((provider) => (
-                      <div key={provider}>
-                        <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-3 pt-2 pb-1">{provider}</p>
-                        {MODELS.filter((m) => m.provider === provider).map((m) => (
-                          <button
-                            key={m.name}
-                            type="button"
-                            onClick={() => { setActiveModel(m.name); setShowModelDropdown(false); }}
-                            className={`w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-left transition hover:bg-[#F5F4F0] ${
-                              activeModel === m.name ? 'text-[#E8521A] font-semibold' : 'text-[#374151]'
-                            }`}
-                          >
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${PROVIDER_COLOR[provider]}`} />
-                            {m.name}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Describe your project, ask a question, or just say hi — I'm here to help…"
+                  className="flex-1 bg-transparent text-[13px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none"
+                />
               </div>
-
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Describe your project, ask a question, or just say hi — I'm here to help…"
-                className="flex-1 bg-transparent text-[13px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!chatInput.trim()}
-                className="w-8 h-8 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition disabled:opacity-30 flex-shrink-0"
-              >
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" strokeLinejoin="round" />
-                </svg>
-              </button>
+              {/* Media toolbar */}
+              <div className="border-t border-[#E5E5E5]/60">
+                <MediaToolbar
+                  onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
+                  onAttachFile={(f) => console.log('attach:', f.name)}
+                  onAttachImage={(_, url) => console.log('image:', url)}
+                  showAgentPill={false}
+                  submitLabel={undefined}
+                  onSubmit={undefined}
+                  submitDisabled={!chatInput.trim()}
+                />
+                {/* Send button row */}
+                <div className="flex justify-end px-3 pb-2">
+                  <button
+                    type="submit"
+                    disabled={!chatInput.trim()}
+                    className="w-9 h-9 rounded-full bg-[#E8521A] flex items-center justify-center hover:bg-[#d04415] transition disabled:opacity-30"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M1 7L13 1L7.5 7L13 13L1 7Z" fill="white" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           </form>
         </div>
