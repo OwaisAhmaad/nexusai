@@ -9,6 +9,7 @@ import { SessionRepository } from './repositories/session.repository';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
+import { MicrosoftStrategy } from './strategies/microsoft.strategy';
 import { Session, SessionSchema } from './schemas/session.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 
@@ -32,7 +33,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionRepository, JwtStrategy, GoogleStrategy, GithubStrategy],
+  providers: [AuthService, SessionRepository, JwtStrategy, GoogleStrategy, GithubStrategy, MicrosoftStrategy],
   exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

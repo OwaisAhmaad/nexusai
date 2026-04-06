@@ -98,40 +98,76 @@ export class AuthController {
     return { data: sessions };
   }
 
+  /* ── OAuth helpers ── */
+  private get frontendUrl() {
+    return process.env.FRONTEND_URL || 'http://localhost:3000';
+  }
+
+  private isConfigured(clientId: string | undefined): boolean {
+    return !!clientId && !clientId.startsWith('placeholder');
+  }
+
+  /* ── Google OAuth ── */
   @Public()
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
-  googleAuth() {
-    // Passport redirects to Google — no body needed
-  }
+  googleAuth() { /* Passport handles redirect */ }
 
   @Public()
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  @ApiResponse({ status: 302, description: 'Google OAuth callback — redirects to frontend' })
+  @ApiResponse({ status: 302, description: 'Google OAuth callback' })
   async googleCallback(@Req() req: any, @Res() res: Response) {
-    const token = await this.authService.generateTokenForUser(req.user);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=google`);
+    try {
+      if (!req.user) throw new Error('No user from Google');
+      const token = await this.authService.generateTokenForUser(req.user);
+      res.redirect(`${this.frontendUrl}/auth/callback?token=${token}&provider=google`);
+    } catch {
+      res.redirect(`${this.frontendUrl}/auth/callback?error=google_failed`);
+    }
   }
 
+  /* ── GitHub OAuth ── */
   @Public()
   @Get('github')
   @UseGuards(AuthGuard('github'))
   @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth' })
-  githubAuth() {
-    // Passport redirects to GitHub — no body needed
-  }
+  githubAuth() { /* Passport handles redirect */ }
 
   @Public()
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
-  @ApiResponse({ status: 302, description: 'GitHub OAuth callback — redirects to frontend' })
+  @ApiResponse({ status: 302, description: 'GitHub OAuth callback' })
   async githubCallback(@Req() req: any, @Res() res: Response) {
-    const token = await this.authService.generateTokenForUser(req.user);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=github`);
+    try {
+      if (!req.user) throw new Error('No user from GitHub');
+      const token = await this.authService.generateTokenForUser(req.user);
+      res.redirect(`${this.frontendUrl}/auth/callback?token=${token}&provider=github`);
+    } catch {
+      res.redirect(`${this.frontendUrl}/auth/callback?error=github_failed`);
+    }
+  }
+
+  /* ── Microsoft OAuth ── */
+  @Public()
+  @Get('microsoft')
+  @UseGuards(AuthGuard('microsoft'))
+  @ApiResponse({ status: 302, description: 'Redirects to Microsoft OAuth' })
+  microsoftAuth() { /* Passport handles redirect */ }
+
+  @Public()
+  @Get('microsoft/callback')
+  @UseGuards(AuthGuard('microsoft'))
+  @ApiResponse({ status: 302, description: 'Microsoft OAuth callback' })
+  async microsoftCallback(@Req() req: any, @Res() res: Response) {
+    try {
+      if (!req.user) throw new Error('No user from Microsoft');
+      const token = await this.authService.generateTokenForUser(req.user);
+      res.redirect(`${this.frontendUrl}/auth/callback?token=${token}&provider=microsoft`);
+    } catch {
+      res.redirect(`${this.frontendUrl}/auth/callback?error=microsoft_failed`);
+    }
   }
 
   private setRefreshCookie(res: Response, token: string) {
