@@ -155,9 +155,9 @@ export function NavLinks() {
       </Link>
       <Link
         href="/auth/register"
-        className="bg-[#E8521A] text-white px-4 py-2 rounded-lg hover:bg-[#d04415] transition text-sm font-semibold"
+        className="bg-[#E8521A] text-white px-4 py-2 rounded-full hover:bg-[#d04415] transition text-sm font-semibold"
       >
-        Get started →
+        Try free →
       </Link>
     </div>
   );

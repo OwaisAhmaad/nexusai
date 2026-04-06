@@ -20,11 +20,10 @@ export function Navbar() {
         {/* Center nav */}
         <nav className="hidden md:flex items-center gap-1">
           {[
-            { href: '/', label: 'Home' },
-            { href: '/#advisor', label: 'AI Advisor' },
+            { href: '/chat-hub',    label: 'Chat Hub' },
             { href: '/marketplace', label: 'Marketplace' },
-            { href: '/agents', label: 'Agents' },
-            { href: '/research', label: 'Research' },
+            { href: '/research',    label: 'Discover New' },
+            { href: '/agents',      label: 'Agents' },
           ].map((link) => (
             <Link
               key={link.href}

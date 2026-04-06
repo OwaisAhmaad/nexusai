@@ -28,11 +28,11 @@ export function MobileNav() {
       {open && (
         <div className="absolute top-16 left-0 right-0 bg-white border-b border-border px-4 py-3 space-y-1 shadow-lg">
           {[
-            { href: '/', label: 'Home' },
-            { href: '/#advisor', label: 'AI Advisor' },
+            { href: '/',            label: 'Home' },
+            { href: '/chat-hub',    label: 'Chat Hub' },
             { href: '/marketplace', label: 'Marketplace' },
-            { href: '/agents', label: 'Agents' },
-            { href: '/research', label: 'Research' },
+            { href: '/research',    label: 'Discover New' },
+            { href: '/agents',      label: 'Agents' },
           ].map((link) => (
             <Link
               key={link.href}
