@@ -178,16 +178,14 @@ export class AuthService {
   }
 
   async generateTokenForUser(user: UserDocument): Promise<string> {
-    const payload = {
-      sub: (user._id as Types.ObjectId).toString(),
-      email: user.email,
-      role: user.role ?? 'user',
-      sessionId: '',
-    };
-    return this.jwtService.sign(payload, {
-      secret: this.config.get<string>('JWT_SECRET'),
-      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '15m'),
-    });
+    // Create a real session so JwtStrategy's session validation passes
+    const tokens = await this.createSession(
+      user._id as Types.ObjectId,
+      user.email,
+      user.role ?? 'user',
+      'oauth',
+    );
+    return tokens.accessToken;
   }
 
   private sanitizeUser(user: UserDocument) {
