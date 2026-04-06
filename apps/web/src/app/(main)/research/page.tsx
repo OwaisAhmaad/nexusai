@@ -238,21 +238,25 @@ function sidebarDate(paper: ResearchPaper): string {
   return paper.date;
 }
 
-/** Format the right-panel header date */
+const MONTH_FULL: Record<string, string> = {
+  JAN: 'January', FEB: 'February', MAR: 'March', APR: 'April',
+  MAY: 'May',     JUN: 'June',     JUL: 'July',  AUG: 'August',
+  SEP: 'September', OCT: 'October', NOV: 'November', DEC: 'December',
+};
+
+/** Format the right-panel header date — locale-independent to avoid SSR/client mismatch */
 function headerDate(paper: ResearchPaper): string {
   if (typeof paper.date === 'number') {
     const monthName = paper.month
-      ? new Date(`${paper.month} 1 2026`).toLocaleString('default', { month: 'long' })
+      ? (MONTH_FULL[paper.month.toUpperCase()] ?? paper.month)
       : 'March';
     return `${monthName} ${paper.date}, 2026`;
   }
   // string like "MAR 26" → "March 26, 2026"
   const parts = paper.date.split(' ');
   if (parts.length === 2) {
-    const d = new Date(`${parts[0]} ${parts[1]} 2026`);
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-    }
+    const monthName = MONTH_FULL[parts[0].toUpperCase()] ?? parts[0];
+    return `${monthName} ${parts[1]}, 2026`;
   }
   return `March ${paper.date}, 2026`;
 }

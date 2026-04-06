@@ -1,18 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MediaToolbar } from '@/components/MediaToolbar';
-
-/* ── Types ──────────────────────────────────────────────────── */
-type Step = 0 | 1 | 2 | 3;
-
-interface OnboardingData {
-  task: string;
-  experience: string;
-  budget: string;
-}
 
 /* ── Static data ─────────────────────────────────────────────── */
 const SUGGESTED_PILLS = [
@@ -188,185 +179,17 @@ const BUDGET_OPTIONS = [
 /* ── Page component ──────────────────────────────────────────── */
 export default function HomePage() {
   const router = useRouter();
+  const [textInput, setTextInput] = useState('');
+  const [activeTab, setActiveTab] = useState('Recruiting');
+  const [email, setEmail] = useState('');
 
-  /* Onboarding state */
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [step, setStep]                     = useState<Step>(0);
-  const [textInput, setTextInput]           = useState('');
-  const [email, setEmail]                   = useState('');
-  const [data, setData]                     = useState<Partial<OnboardingData>>({});
-  const [activeTab, setActiveTab]           = useState('Recruiting');
-
-  /* Open quiz */
-  function startQuiz(task?: string) {
-    setData(task ? { task } : {});
-    setStep(task ? 0 : 0);   // always show welcome first
-    setShowOnboarding(true);
-  }
-
-  /* Finish onboarding */
-  function finish(budget: string) {
-    const final: OnboardingData = {
-      task:       data.task       ?? 'general AI assistance',
-      experience: data.experience ?? 'Some experience',
-      budget,
-    };
-    sessionStorage.setItem('nexusai_onboarding', JSON.stringify(final));
-    setShowOnboarding(false);
+  function startQuiz(_task?: string) {
     router.push('/chat-hub');
   }
-
-  /* Close on ESC */
-  useEffect(() => {
-    if (!showOnboarding) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowOnboarding(false);
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showOnboarding]);
 
   /* ── Render ───────────────────────────────────────────────── */
   return (
     <>
-      {/* ── ONBOARDING MODAL ── */}
-      {showOnboarding && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowOnboarding(false); }}
-        >
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-8 relative">
-            {/* Close */}
-            <button
-              type="button"
-              onClick={() => setShowOnboarding(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-[#6B7280] hover:bg-[#F5F4F0] transition"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-
-            {/* Progress bar — only for steps 1-3 */}
-            {step > 0 && (
-              <div className="flex gap-2 mb-8">
-                {([1, 2, 3] as const).map((n) => (
-                  <div
-                    key={n}
-                    className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${step >= n ? 'bg-[#E8521A]' : 'bg-[#E5E5E5]'}`}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Step 0 — Welcome */}
-            {step === 0 && (
-              <div className="text-center">
-                <div className="w-14 h-14 bg-[#E8521A] rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <svg width="24" height="24" viewBox="0 0 18 18" fill="none">
-                    <path d="M9 1L16 5V13L9 17L2 13V5L9 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-                    <circle cx="9" cy="9" r="2.5" fill="white"/>
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-black text-[#1A1A1A] mb-3">Welcome to NexusAI 👋</h2>
-                <p className="text-[#6B7280] text-sm mb-5 leading-relaxed">
-                  In 3 quick questions, I&apos;ll find the perfect AI models for you.
-                </p>
-                {data.task && (
-                  <div className="bg-[#FFF8F5] border border-[#E8521A]/20 rounded-xl px-4 py-2.5 mb-5 text-sm text-[#E8521A] font-medium">
-                    You want to: {data.task}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setStep(data.task ? 2 : 1)}
-                  className="w-full bg-[#E8521A] text-white py-3 rounded-full font-bold text-[15px] hover:bg-[#d04415] transition mb-3"
-                >
-                  Let&apos;s get started →
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowOnboarding(false); router.push('/marketplace'); }}
-                  className="text-[13px] text-[#6B7280] hover:text-[#1A1A1A] transition underline-offset-2 hover:underline"
-                >
-                  Skip to marketplace
-                </button>
-              </div>
-            )}
-
-            {/* Step 1 — task */}
-            {step === 1 && (
-              <>
-                <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-widest mb-2">Step 1 of 3</p>
-                <h2 className="text-2xl font-black text-[#1A1A1A] mb-6">What are you building?</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {QUIZ_TASKS.map((t) => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => { setData((p) => ({ ...p, task: t.label })); setStep(2); }}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-[#E5E5E5] bg-white text-left hover:border-[#E8521A] hover:bg-[#FFF8F5] transition"
-                    >
-                      <span className="text-2xl flex-shrink-0">{t.icon}</span>
-                      <span className="text-[13px] font-semibold text-[#1A1A1A]">{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Step 2 — experience */}
-            {step === 2 && (
-              <>
-                <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-widest mb-2">Step 2 of 3</p>
-                <h2 className="text-2xl font-black text-[#1A1A1A] mb-1">What&apos;s your experience level?</h2>
-                <p className="text-[#6B7280] text-sm mb-6">Totally fine to be brand new — that&apos;s what I&apos;m here for!</p>
-                <div className="space-y-2">
-                  {EXPERIENCE_LEVELS.map((e) => (
-                    <button
-                      key={e.value}
-                      type="button"
-                      onClick={() => { setData((p) => ({ ...p, experience: e.label })); setStep(3); }}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#E5E5E5] bg-white text-left hover:border-[#E8521A] hover:bg-[#FFF8F5] transition"
-                    >
-                      <span className="text-2xl flex-shrink-0">{e.icon}</span>
-                      <div>
-                        <p className="text-[14px] font-bold text-[#1A1A1A]">{e.label}</p>
-                        <p className="text-[12px] text-[#6B7280]">{e.sub}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Step 3 — budget */}
-            {step === 3 && (
-              <>
-                <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-widest mb-2">Step 3 of 3</p>
-                <h2 className="text-2xl font-black text-[#1A1A1A] mb-1">What&apos;s your budget priority?</h2>
-                <p className="text-[#6B7280] text-sm mb-6">We&apos;ll filter models to match your budget.</p>
-                <div className="space-y-2">
-                  {BUDGET_OPTIONS.map((b) => (
-                    <button
-                      key={b.value}
-                      type="button"
-                      onClick={() => finish(b.label)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#E5E5E5] bg-white text-left hover:border-[#E8521A] hover:bg-[#FFF8F5] transition"
-                    >
-                      <span className="text-2xl flex-shrink-0">{b.icon}</span>
-                      <div>
-                        <p className="text-[14px] font-bold text-[#1A1A1A]">{b.label}</p>
-                        <p className="text-[12px] text-[#6B7280]">{b.sub}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* ── LANDING PAGE ── */}
       <div className="min-h-screen bg-[#F5F4F0]">
 
