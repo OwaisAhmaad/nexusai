@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from './AuthModal';
 import { CreateAgentModal } from './CreateAgentModal';
+import { MediaToolbar } from './MediaToolbar';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -98,7 +99,6 @@ const STATIC_AGENT_TEMPLATES: AgentTemplate[] = [
   },
 ];
 
-const TOOLBAR_EMOJIS = ['🔥', '🎨', '📹', '💬', '📎', '🖼'];
 
 /* ─── TaskRow ─── */
 function TaskRow({ label }: { label: string }) {
@@ -281,30 +281,26 @@ export function AgentsPageClient() {
           </div>
 
           {/* Chat input */}
-          <div className="mt-8 bg-white rounded-2xl border border-[#E5E5E5] p-4">
-            <textarea
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="What should we work on next?"
-              className="w-full text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
-              rows={2}
-            />
-            <div className="flex justify-between items-center mt-3">
-              {/* Toolbar */}
-              <div className="flex items-center gap-1">
-                {TOOLBAR_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    className="w-7 h-7 rounded-lg hover:bg-[#F5F4F0] flex items-center justify-center text-base text-[#6B7280] transition"
-                    aria-label={emoji}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              {/* Right controls */}
-              <div className="flex items-center gap-2">
+          <div className="mt-8 bg-white rounded-2xl border border-[#E5E5E5] overflow-hidden">
+            <div className="p-4 pb-2">
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="What should we work on next?"
+                className="w-full text-[15px] text-[#1A1A1A] placeholder-[#9CA3AF] focus:outline-none resize-none bg-transparent"
+                rows={2}
+              />
+            </div>
+            {/* Media toolbar */}
+            <div className="border-t border-[#F5F4F0]">
+              <MediaToolbar
+                onVoiceTranscript={(t) => setChatInput((prev) => prev + (prev ? ' ' : '') + t)}
+                onAttachFile={(f) => console.log('attach:', f.name)}
+                onAttachImage={(_, url) => console.log('image:', url)}
+                showAgentPill={false}
+              />
+              {/* Agent pill + send */}
+              <div className="flex justify-end items-center gap-2 px-3 pb-3">
                 <button
                   type="button"
                   className="border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] font-semibold text-[#374151] hover:border-[#1A1A1A] transition"
