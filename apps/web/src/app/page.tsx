@@ -59,68 +59,68 @@ const FEATURED_MODELS = [
 ];
 
 const BUILDER_CARDS = [
-  { icon: '🌱', title: 'Beginners',   desc: 'No AI experience? No problem. We guide you step by step.' },
-  { icon: '💻', title: 'Developers',  desc: 'API access, code examples, and technical comparisons.' },
-  { icon: '📊', title: 'Analysts',    desc: 'Data processing, chart generation, and report writing.' },
-  { icon: '🎨', title: 'Creatives',   desc: 'Image generation, video creation, and audio synthesis.' },
-  { icon: '🏢', title: 'Businesses',  desc: 'Customer support, automation, and workflow tools.' },
-  { icon: '🔬', title: 'Researchers', desc: 'Academic writing, literature review, and citations.' },
+  { icon: '💬', title: 'Guided Discovery Chat',    desc: 'Tell us your goal and we\'ll recommend the best models for your use case, automatically.' },
+  { icon: '⚡', title: 'Prompt Engineering Guide', desc: 'Learn the principles and techniques to get the best output from any AI model.' },
+  { icon: '🤖', title: 'Agent Builder',            desc: 'Build your own AI agents with custom tools, configuration, and memory.' },
+  { icon: '💰', title: 'Flexible Pricing',         desc: 'Every plan is pay-as-you-go with no hidden fees. Only pay for what you actually use.' },
+  { icon: '⭐', title: 'User Reviews & Ratings',   desc: 'Real reviews from real builders to help you choose which models to use.' },
+  { icon: '📰', title: 'Research Feed',            desc: 'Stay on top of AI breakthroughs, model releases, and benchmarks — all in one place.' },
 ];
 
 const AI_LABS = [
-  { name: 'OpenAI',     emoji: '🟢', count: '9 models'  },
-  { name: 'Anthropic',  emoji: '🟣', count: '8 models'  },
-  { name: 'Google',     emoji: '🔵', count: '6 models'  },
-  { name: 'Meta',       emoji: '🔵', count: '4 models'  },
-  { name: 'Mistral AI', emoji: '🟡', count: '3 models'  },
-  { name: 'DeepSeek',   emoji: '🟤', count: '4 models'  },
-  { name: 'xAI',        emoji: '⚫', count: '2 models'  },
-  { name: 'Alibaba',    emoji: '🔴', count: '3 models'  },
-  { name: 'NVIDIA',     emoji: '🟢', count: '2 models'  },
-  { name: 'GLM',        emoji: '🔵', count: '2 models'  },
-  { name: 'Moonshot',   emoji: '🌙', count: '2 models'  },
+  { name: 'OpenAI',     color: 'bg-green-500',  count: '9 models'  },
+  { name: 'Anthropic',  color: 'bg-violet-500', count: '8 models'  },
+  { name: 'Google',     color: 'bg-blue-500',   count: '6 models'  },
+  { name: 'Meta',       color: 'bg-sky-500',    count: '4 models'  },
+  { name: 'Mistral AI', color: 'bg-amber-500',  count: '3 models'  },
+  { name: 'DeepSeek',   color: 'bg-indigo-500', count: '4 models'  },
+  { name: 'xAI',        color: 'bg-gray-700',   count: '2 models'  },
+  { name: 'Alibaba',    color: 'bg-orange-500', count: '3 models'  },
+  { name: 'NVIDIA',     color: 'bg-green-600',  count: '2 models'  },
+  { name: 'GLM',        color: 'bg-blue-600',   count: '2 models'  },
+  { name: 'Moonshot',   color: 'bg-purple-500', count: '2 models'  },
 ];
 
 const COMPARISON_TABLE = [
-  { model: 'GPT-5',             lab: 'OpenAI',    context: '256K', speed: '⚡⚡⚡', price: '$$',   bestFor: 'Reasoning'   },
-  { model: 'Claude Opus 4.6',   lab: 'Anthropic', context: '200K', speed: '⚡⚡',   price: '$$$',  bestFor: 'Analysis'    },
-  { model: 'Gemini 3.1 Pro',    lab: 'Google',    context: '2M',   speed: '⚡⚡',   price: '$$',   bestFor: 'Multimodal'  },
-  { model: 'GPT-5 Turbo',       lab: 'OpenAI',    context: '128K', speed: '⚡⚡⚡', price: '$',    bestFor: 'Speed'       },
-  { model: 'Claude Sonnet 4.6', lab: 'Anthropic', context: '200K', speed: '⚡⚡⚡', price: '$$',   bestFor: 'Balance'     },
-  { model: 'Gemini 3 Flash',    lab: 'Google',    context: '1M',   speed: '⚡⚡⚡', price: '$',    bestFor: 'Fast & cheap'},
-  { model: 'Llama 4',           lab: 'Meta',      context: '128K', speed: '⚡⚡',   price: 'Free', bestFor: 'Open source' },
-  { model: 'Mistral Large',     lab: 'Mistral',   context: '128K', speed: '⚡⚡',   price: '$$',   bestFor: 'European'    },
-  { model: 'DeepSeek R2',       lab: 'DeepSeek',  context: '64K',  speed: '⚡⚡',   price: '$',    bestFor: 'Math/Code'   },
-  { model: 'o4-mini',           lab: 'OpenAI',    context: '128K', speed: '⚡⚡⚡', price: '$',    bestFor: 'Reasoning'   },
-  { model: 'Claude Haiku 4.5',  lab: 'Anthropic', context: '200K', speed: '⚡⚡⚡', price: '$',    bestFor: 'Lightweight' },
-  { model: 'Grok 2',            lab: 'xAI',       context: '128K', speed: '⚡⚡',   price: '$$',   bestFor: 'Real-time'   },
+  { model: 'GPT-5',             lab: 'OpenAI',    context: '256K', inputPrice: '$3.00',  outputPrice: '$15.00', multimodal: true,  speed: 3, bestFor: 'Reasoning'    },
+  { model: 'Claude Opus 4.6',   lab: 'Anthropic', context: '200K', inputPrice: '$2.00',  outputPrice: '$10.00', multimodal: false, speed: 2, bestFor: 'Analysis'     },
+  { model: 'Claude Haiku 4.5',  lab: 'Anthropic', context: '200K', inputPrice: '$0.08',  outputPrice: '$0.40',  multimodal: false, speed: 3, bestFor: 'Lightweight'  },
+  { model: 'Gemini 3.1 Pro',    lab: 'Google',    context: '2M',   inputPrice: '$1.25',  outputPrice: '$5.00',  multimodal: true,  speed: 2, bestFor: 'Multimodal'   },
+  { model: 'Gemini 3 Flash',    lab: 'Google',    context: '1M',   inputPrice: '$0.10',  outputPrice: '$0.40',  multimodal: true,  speed: 3, bestFor: 'Fast & cheap' },
+  { model: 'Grok 2',            lab: 'xAI',       context: '128K', inputPrice: '$2.00',  outputPrice: '$10.00', multimodal: false, speed: 2, bestFor: 'Real-time'    },
+  { model: 'Llama 4',           lab: 'Meta',      context: '128K', inputPrice: 'Free',   outputPrice: 'Free',   multimodal: true,  speed: 2, bestFor: 'Open source'  },
+  { model: 'DeepSeek R2',       lab: 'DeepSeek',  context: '64K',  inputPrice: '$0.14',  outputPrice: '$0.28',  multimodal: false, speed: 2, bestFor: 'Math/Code'    },
+  { model: 'GPT-5 Turbo',       lab: 'OpenAI',    context: '128K', inputPrice: '$1.00',  outputPrice: '$4.00',  multimodal: true,  speed: 3, bestFor: 'Speed'        },
+  { model: 'Claude Sonnet 4.6', lab: 'Anthropic', context: '200K', inputPrice: '$0.60',  outputPrice: '$3.00',  multimodal: false, speed: 3, bestFor: 'Balance'      },
+  { model: 'Mistral Large',     lab: 'Mistral',   context: '128K', inputPrice: '$2.00',  outputPrice: '$6.00',  multimodal: false, speed: 2, bestFor: 'European'     },
+  { model: 'o4-mini',           lab: 'OpenAI',    context: '128K', inputPrice: '$0.15',  outputPrice: '$0.60',  multimodal: true,  speed: 3, bestFor: 'Reasoning'    },
 ];
 
 const TRENDING = [
-  { rank: 1, name: 'GPT-5',           provider: 'OpenAI',    useCase: 'Reasoning'    },
-  { rank: 2, name: 'Claude Opus 4.6', provider: 'Anthropic', useCase: 'Analysis'     },
-  { rank: 3, name: 'Gemini 3.1 Pro',  provider: 'Google',    useCase: 'Multimodal'   },
-  { rank: 4, name: 'o4-mini',         provider: 'OpenAI',    useCase: 'Speed'        },
-  { rank: 5, name: 'DeepSeek R2',     provider: 'DeepSeek',  useCase: 'Math/Code'    },
-  { rank: 6, name: 'Llama 4',         provider: 'Meta',      useCase: 'Open source'  },
+  { badge: 'Just Released', badgeColor: 'bg-green-100 text-green-700',   title: 'Claude Opus 4.6 & Sonnet 4.6 — Thought Signatures', desc: 'Flagship reasoning with chain-of-thought visibility, setting new benchmarks in coding and analysis tasks.', source: 'Anthropic Blog' },
+  { badge: 'Just Released', badgeColor: 'bg-blue-100 text-blue-700',     title: 'GPT-5.4 — fastest agent use yet', desc: 'Blinding tool-use, agentic apps, and flow orchestration with drastically improved reasoning efficiency.', source: 'OpenAI Blog' },
+  { badge: 'Open Source',   badgeColor: 'bg-purple-100 text-purple-700', title: 'Grok-4-Flash — 4 Agent Architecture', desc: 'xAI releases Grok-4 with a novel 4-agent tree-of-thought architecture for parallel reasoning tasks.', source: 'xAI Research' },
+  { badge: 'Data Note',     badgeColor: 'bg-amber-100 text-amber-700',   title: 'Llama & Moonshot — 400B Local', desc: "Meta's 400B local model challenges cloud-only assumptions and brings enterprise inference on-premise.", source: 'Meta AI' },
+  { badge: 'Gemini',        badgeColor: 'bg-blue-100 text-blue-700',     title: 'Gemini 3 Pro — Frontier Coding Agent', desc: "Google's coding agent integrates directly with 2026+ codebases with MCP protocol out of the box.", source: 'Google DeepMind' },
+  { badge: 'Best Now',      badgeColor: 'bg-orange-100 text-orange-700', title: 'DeepSeek V3 — Cheapest Frontier', desc: 'DeepSeek delivers GPT-5-level coding at 10× lower cost, redefining frontier model economics.', source: 'DeepSeek AI' },
 ];
 
 const BUDGET_TIERS = [
-  { icon: '🆓', tier: 'Free',     desc: 'Open-source models',  models: 'Llama 4, DeepSeek R2, Mistral 7B'          },
-  { icon: '💰', tier: 'Budget',   desc: 'Under $10/mo',        models: 'GPT-4.1-mini, Gemini Flash, Claude Haiku'   },
-  { icon: '⚖️', tier: 'Standard', desc: '$10–$50/mo',          models: 'GPT-5, Claude Sonnet, Gemini Pro'           },
-  { icon: '🏆', tier: 'Premium',  desc: 'Best quality',        models: 'GPT-5, Claude Opus, Gemini Ultra'           },
+  { icon: '🆓', tier: 'Free & Open Source', desc: 'Open-source models with no API costs',        models: 'Llama 4, DeepSeek R2, Mistral 7B',        bg: 'bg-blue-50   border-blue-100'   },
+  { icon: '💰', tier: 'Budget — Under $0.50/M', desc: 'Low-cost APIs for high-volume tasks',     models: 'GPT-4.1-mini, Gemini Flash, Claude Haiku', bg: 'bg-green-50  border-green-100'  },
+  { icon: '⚖️', tier: 'Standard — ~$1–5/M',     desc: 'Best value for production workloads',    models: 'GPT-5, Claude Sonnet, Gemini Pro',         bg: 'bg-orange-50 border-orange-100' },
+  { icon: '🏆', tier: 'Premium — ~$1–50/M',     desc: 'Top performance for complex tasks',       models: 'GPT-5, Claude Opus 4.6, Gemini Ultra',    bg: 'bg-purple-50 border-purple-100' },
 ];
 
 const USE_CASES = [
-  { label: 'Coding',            icon: '💻', value: 'coding'           },
-  { label: 'Writing',           icon: '✍️', value: 'writing'          },
-  { label: 'Analysis',          icon: '📊', value: 'analysis'         },
-  { label: 'Customer Support',  icon: '🎧', value: 'customer-support' },
-  { label: 'Research',          icon: '🔬', value: 'research'         },
-  { label: 'Real-time',         icon: '🔴', value: 'real-time'        },
-  { label: 'Vision',            icon: '👁️', value: 'vision'           },
-  { label: 'Math',              icon: '🧮', value: 'math'             },
+  { label: 'Code Generation',            icon: '💻', desc: 'GPT-5, Claude Opus 4.6, Gemini Pro',   value: 'coding'    },
+  { label: 'Image Generation',           icon: '🎨', desc: 'DALL-E 3, Midjourney, Stable Diff',    value: 'vision'    },
+  { label: 'AI Agents',                  icon: '🤖', desc: 'GPT-5, Claude, Gemini agents',         value: 'coding'    },
+  { label: 'Document Analysis',          icon: '📄', desc: 'Claude, GPT-4, Gemini with PDFs',      value: 'analysis'  },
+  { label: 'Video Generation',           icon: '🎬', desc: 'Sora, Runway, Pika Labs models',       value: 'vision'    },
+  { label: 'Video & Audio',              icon: '🎵', desc: 'ElevenLabs, Whisper, Suno AI',         value: 'real-time' },
+  { label: 'Multilingual / Translation', icon: '🌐', desc: 'GPT-5, DeepL, Seamless, NLLB',        value: 'writing'   },
+  { label: 'Math & Research',            icon: '🧮', desc: 'o4-mini, Gemini, DeepSeek R2',         value: 'research'  },
 ];
 
 const QUIZ_TASKS = [
@@ -443,9 +443,9 @@ export default function HomePage() {
         {/* ─ Section 2: Featured Models ──────────────────────── */}
         <section className="py-14 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
+            <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-black text-[#1A1A1A]">Featured Models</h2>
-              <p className="text-[#6B7280] text-sm mt-1">Hand-picked by our team · Updated weekly</p>
+              <Link href="/marketplace" className="text-[13px] font-semibold text-[#E8521A] hover:underline">Browse all →</Link>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
               {FEATURED_MODELS.map((m) => (
@@ -482,9 +482,8 @@ export default function HomePage() {
         {/* ─ Section 3: Built for every builder ─────────────── */}
         <section className="py-14 bg-[#F5F4F0]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
+            <div className="mb-10">
               <h2 className="text-2xl font-black text-[#1A1A1A]">Built for every builder</h2>
-              <p className="text-[#6B7280] text-sm mt-1">Whether you&apos;re just starting out or deploying at scale</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {BUILDER_CARDS.map((c) => (
@@ -501,9 +500,9 @@ export default function HomePage() {
         {/* ─ Section 4: Browse by AI Lab ─────────────────────── */}
         <section className="py-14 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
+            <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-black text-[#1A1A1A]">Browse by AI Lab</h2>
-              <p className="text-[#6B7280] text-sm mt-1">11 leading AI research labs</p>
+              <Link href="/marketplace" className="text-[13px] font-semibold text-[#E8521A] hover:underline">See all →</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {AI_LABS.map((lab) => (
@@ -512,7 +511,9 @@ export default function HomePage() {
                   href="/marketplace"
                   className="rounded-2xl bg-white border border-[#E5E5E5] p-4 hover:shadow-md transition flex items-center gap-3"
                 >
-                  <span className="text-2xl">{lab.emoji}</span>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-[14px] flex-shrink-0 ${lab.color}`}>
+                    {lab.name[0]}
+                  </div>
                   <div>
                     <p className="text-[14px] font-bold text-[#1A1A1A]">{lab.name}</p>
                     <p className="text-[12px] text-[#6B7280]">{lab.count}</p>
@@ -526,19 +527,22 @@ export default function HomePage() {
         {/* ─ Section 5: Comparison Table ─────────────────────── */}
         <section className="py-14 bg-[#F5F4F0]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
+            <div className="flex items-center justify-between mb-2">
               <h2 className="text-2xl font-black text-[#1A1A1A]">Flagship Model Comparison</h2>
-              <p className="text-[#6B7280] text-sm mt-1">Side-by-side comparison of the best models</p>
+              <Link href="/marketplace" className="text-[13px] font-semibold text-[#E8521A] hover:underline">Compare all →</Link>
             </div>
+            <p className="text-[#6B7280] text-sm mb-8">Side-by-side of the leading models. Input/Output prices per 1M tokens.</p>
             <div className="bg-white rounded-2xl border border-[#E5E5E5] overflow-x-auto">
-              <table className="w-full min-w-[640px] text-[13px]">
+              <table className="w-full min-w-[780px] text-[13px]">
                 <thead>
                   <tr className="border-b border-[#E5E5E5] text-[#6B7280] text-left">
                     <th className="px-4 py-3 font-semibold">Model</th>
                     <th className="px-4 py-3 font-semibold">Lab</th>
                     <th className="px-4 py-3 font-semibold">Context</th>
+                    <th className="px-4 py-3 font-semibold">Input /1M</th>
+                    <th className="px-4 py-3 font-semibold">Output /1M</th>
+                    <th className="px-4 py-3 font-semibold text-center">Multimodal</th>
                     <th className="px-4 py-3 font-semibold">Speed</th>
-                    <th className="px-4 py-3 font-semibold">Price</th>
                     <th className="px-4 py-3 font-semibold">Best For</th>
                   </tr>
                 </thead>
@@ -551,12 +555,16 @@ export default function HomePage() {
                       <td className="px-4 py-3 font-semibold text-[#1A1A1A]">{row.model}</td>
                       <td className="px-4 py-3 text-[#6B7280]">{row.lab}</td>
                       <td className="px-4 py-3 text-[#6B7280]">{row.context}</td>
-                      <td className="px-4 py-3">{row.speed}</td>
-                      <td className="px-4 py-3 font-mono text-[#1A1A1A]">{row.price}</td>
+                      <td className="px-4 py-3 font-mono text-[#374151]">{row.inputPrice}</td>
+                      <td className="px-4 py-3 font-mono text-[#374151]">{row.outputPrice}</td>
+                      <td className="px-4 py-3 text-center">{row.multimodal ? <span className="text-green-500 font-bold">✓</span> : <span className="text-red-400">✗</span>}</td>
                       <td className="px-4 py-3">
-                        <span className="bg-[#F5F4F0] text-[#374151] px-2 py-0.5 rounded-full text-[11px] font-medium">
-                          {row.bestFor}
+                        <span className="flex gap-0.5">
+                          {[1,2,3].map(n => <span key={n} className={`w-2 h-2 rounded-full ${n <= row.speed ? 'bg-[#E8521A]' : 'bg-[#E5E5E5]'}`} />)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="bg-[#F5F4F0] text-[#374151] px-2 py-0.5 rounded-full text-[11px] font-medium">{row.bestFor}</span>
                       </td>
                     </tr>
                   ))}
@@ -569,24 +577,19 @@ export default function HomePage() {
         {/* ─ Section 6: Trending This Week ───────────────────── */}
         <section className="py-14 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-black text-[#1A1A1A]">Trending This Week</h2>
-              <p className="text-[#6B7280] text-sm mt-1">What builders are using right now</p>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-[#1A1A1A]">🔥 Trending This Week</h2>
+              <Link href="/research" className="text-[13px] font-semibold text-[#E8521A] hover:underline">View research feed →</Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {TRENDING.map((t) => (
-                <div key={t.name} className="rounded-2xl bg-white border border-[#E5E5E5] p-5 hover:shadow-md transition">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="bg-[#E8521A] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                      #{t.rank}
-                    </span>
-                    <span className="text-[11px] text-[#E8521A] font-semibold">🔥 trending</span>
+                <div key={t.title} className="rounded-2xl bg-white border border-[#E5E5E5] p-5 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${t.badgeColor}`}>{t.badge}</span>
+                    <span className="text-[10px] text-[#9CA3AF]">{t.source}</span>
                   </div>
-                  <p className="text-[15px] font-bold text-[#1A1A1A] mb-1">{t.name}</p>
-                  <p className="text-[12px] text-[#6B7280] mb-3">{t.provider}</p>
-                  <span className="bg-[#F5F4F0] text-[#374151] text-[11px] font-medium px-2.5 py-1 rounded-full">
-                    {t.useCase}
-                  </span>
+                  <p className="text-[14px] font-bold text-[#1A1A1A] mb-2 leading-snug">{t.title}</p>
+                  <p className="text-[12px] text-[#6B7280] leading-relaxed">{t.desc}</p>
                 </div>
               ))}
             </div>
@@ -602,11 +605,12 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {BUDGET_TIERS.map((b) => (
-                <div key={b.tier} className="rounded-2xl bg-white border border-[#E5E5E5] p-5 hover:shadow-md transition">
+                <div key={b.tier} className={`rounded-2xl border p-5 hover:shadow-md transition ${b.bg}`}>
                   <div className="text-3xl mb-3">{b.icon}</div>
                   <p className="text-[15px] font-bold text-[#1A1A1A] mb-1">{b.tier}</p>
                   <p className="text-[13px] text-[#6B7280] mb-3">{b.desc}</p>
-                  <p className="text-[11px] text-[#9CA3AF] leading-relaxed">{b.models}</p>
+                  <p className="text-[11px] text-[#9CA3AF] leading-relaxed mb-4">{b.models}</p>
+                  <Link href="/marketplace" className="text-[12px] font-semibold text-[#E8521A] hover:underline">Models available →</Link>
                 </div>
               ))}
             </div>
@@ -622,13 +626,14 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {USE_CASES.map((u) => (
                 <button
-                  key={u.value}
+                  key={u.label}
                   type="button"
                   onClick={() => startQuiz(u.label)}
                   className="rounded-2xl bg-white border border-[#E5E5E5] p-4 hover:shadow-md hover:border-[#E8521A] transition text-left group"
                 >
                   <div className="text-3xl mb-3">{u.icon}</div>
-                  <p className="text-[14px] font-bold text-[#1A1A1A] mb-2">{u.label}</p>
+                  <p className="text-[14px] font-bold text-[#1A1A1A] mb-1">{u.label}</p>
+                  <p className="text-[11px] text-[#9CA3AF] mb-3 leading-snug">{u.desc}</p>
                   <span className="text-[12px] text-[#E8521A] font-medium group-hover:underline">→ Find models</span>
                 </button>
               ))}
@@ -637,31 +642,34 @@ export default function HomePage() {
         </section>
 
         {/* ─ Section 9: Newsletter CTA ───────────────────────── */}
-        <section className="py-16 bg-[#0F0F0F]">
+        <section className="py-20 bg-[#0F0F0F]">
           <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-black text-white mb-3">Stay ahead of AI</h2>
-            <p className="text-[#9CA3AF] text-[15px] mb-8 leading-relaxed">
-              Get weekly model updates, use case guides, and exclusive comparisons.
+            <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-widest mb-5">YOUR MODEL OF THE WEEK</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
+              New models drop every week.<br />Don&apos;t miss a release.
+            </h2>
+            <p className="text-[#9CA3AF] text-[15px] mb-8 leading-relaxed max-w-lg mx-auto">
+              Get a curated weekly digest: new model releases, benchmark comparisons, pricing changes, and prompt engineering tips — straight to your inbox.
             </p>
             <form
               onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); setEmail(''); }}
-              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4"
             >
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="your@email.com"
                 className="flex-1 bg-white/10 border border-white/20 text-white placeholder-[#6B7280] rounded-full px-4 py-2.5 text-[14px] focus:outline-none focus:border-white/40 transition"
               />
               <button
                 type="submit"
                 className="bg-[#E8521A] text-white px-6 py-2.5 rounded-full font-bold text-[14px] hover:bg-[#d04415] transition whitespace-nowrap"
               >
-                Subscribe →
+                Subscribe free →
               </button>
             </form>
-            <p className="text-[#6B7280] text-[12px] mt-4">No spam · Unsubscribe anytime</p>
+            <p className="text-[#6B7280] text-[12px]">No spam. Unsubscribe any time. Trusted by 82K+ builders.</p>
           </div>
         </section>
 
