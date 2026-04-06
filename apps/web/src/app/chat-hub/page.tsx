@@ -4,6 +4,16 @@ import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import { MediaToolbar } from '@/components/MediaToolbar';
 
+/* ── Welcome tiles ─────────────────────────────────────────── */
+const WELCOME_TILES = [
+  { icon: '🔥', label: 'Write content',   sub: 'Emails, posts, stories',   task: 'writing'   },
+  { icon: '🎨', label: 'Create images',   sub: 'Art, photos, designs',     task: 'vision'    },
+  { icon: '🛠',  label: 'Build something', sub: 'Apps, tools, websites',    task: 'coding'    },
+  { icon: '⚡', label: 'Automate work',   sub: 'Save hours every week',    task: 'coding'    },
+  { icon: '📊', label: 'Analyse data',    sub: 'PDFs, sheets, reports',    task: 'analysis'  },
+  { icon: '🔍', label: 'Just exploring',  sub: 'Show me what\'s possible', task: 'general'   },
+];
+
 /* ── Suggested prompts ─────────────────────────────────────── */
 const SUGGESTED_PROMPTS = [
   { icon: '🎯', text: 'Help me plan a SaaS product from idea to launch' },
@@ -136,6 +146,7 @@ function ThinkingDots() {
 export default function ChatHubPage() {
   const [messages, setMessages]         = useState<ChatMsg[]>([]);
   const [onboarding, setOnboarding]     = useState<OnboardingData | null>(null);
+  const [hasOnboarding, setHasOnboarding] = useState(false);
   const [activeModel, setActiveModel]   = useState('Claude Sonnet 4.6');
   const [chatInput, setChatInput]       = useState('');
   const [promptText, setPromptText]     = useState('');
@@ -159,9 +170,15 @@ export default function ChatHubPage() {
   /* Read sessionStorage + auto-play sequence */
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? sessionStorage.getItem('nexusai_onboarding') : null;
-    const d: OnboardingData = raw
-      ? (JSON.parse(raw) as OnboardingData)
-      : { task: 'general AI assistance', experience: 'Some experience', budget: 'Balanced' };
+
+    if (!raw) {
+      // No onboarding data — show welcome card, no auto-play
+      setHasOnboarding(false);
+      return;
+    }
+
+    setHasOnboarding(true);
+    const d: OnboardingData = JSON.parse(raw) as OnboardingData;
     setOnboarding(d);
     const prompt = generatePrompt(d);
     setPromptText(prompt);
@@ -389,8 +406,47 @@ export default function ChatHubPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-          {messages.map(renderMsg)}
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 flex flex-col">
+          {messages.length === 0 && !hasOnboarding ? (
+            /* Welcome card — shown when navigating directly to /chat-hub */
+            <div className="flex-1 flex items-center justify-center">
+              <div className="bg-white rounded-3xl border border-[#E5E5E5] shadow-sm p-8 max-w-lg w-full text-center">
+                <div className="w-10 h-10 rounded-full border-2 border-[#E5E5E5] flex items-center justify-center mx-auto mb-4">
+                  <DiamondIcon />
+                </div>
+                <h2 className="text-2xl font-black text-[#1A1A1A] mb-2">Welcome! I&apos;m here to help you 👋</h2>
+                <p className="text-[#6B7280] text-[14px] leading-relaxed mb-6">
+                  No tech background needed. Tell me what you&apos;d like to <strong>achieve</strong> — I&apos;ll help you discover what&apos;s possible, step by step.
+                </p>
+                {/* Task tiles */}
+                <div className="bg-[#FFF8F5] rounded-2xl border border-[#E8521A]/20 p-4 mb-4">
+                  <p className="text-[11px] font-bold text-[#E8521A] uppercase tracking-wider mb-3">
+                    ✦ What would you like to do today?
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {WELCOME_TILES.map((tile) => (
+                      <button
+                        key={tile.label}
+                        type="button"
+                        onClick={() => {
+                          sessionStorage.setItem('nexusai_onboarding', JSON.stringify({ task: tile.label, experience: 'Some experience', budget: 'Balanced' }));
+                          window.location.reload();
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-[#E5E5E5] hover:border-[#E8521A] hover:shadow-sm transition text-center"
+                      >
+                        <span className="text-2xl">{tile.icon}</span>
+                        <span className="text-[12px] font-bold text-[#1A1A1A] leading-tight">{tile.label}</span>
+                        <span className="text-[10px] text-[#9CA3AF] leading-tight">{tile.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[12px] text-[#9CA3AF]">Or type anything below — there are no wrong answers ↓</p>
+              </div>
+            </div>
+          ) : (
+            messages.map(renderMsg)
+          )}
           <div ref={bottomRef} />
         </div>
 

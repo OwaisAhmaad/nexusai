@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 
 interface ResearchPaper {
   id: string;
-  date: string;
+  date: string | number;
   lab: string;
   category: string;
   categoryColor: string;
@@ -190,6 +190,12 @@ const PAPERS: ResearchPaper[] = [
   },
 ];
 
+function formatPaperDate(date: string | number): string {
+  if (typeof date === 'number') return String(date);
+  const parts = date.split(' ');
+  return parts.length > 1 ? parts[1] : date;
+}
+
 const FILTER_TABS = [
   'All',
   '🧠 Reasoning',
@@ -359,7 +365,7 @@ export default function ResearchPage() {
                 </span>
                 <span className="text-[#6B7280] text-[13px]">{selectedPaper.lab}</span>
                 <span className="text-[#9CA3AF] text-[13px] ml-auto">
-                  March {selectedPaper.date.split(' ')[1]}, 2026
+                  March {formatPaperDate(selectedPaper.date)}, 2026
                 </span>
               </div>
               <h2 className="text-2xl font-black text-[#1A1A1A] leading-tight mb-2">

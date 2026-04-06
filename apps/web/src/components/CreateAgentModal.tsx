@@ -96,6 +96,66 @@ const TOOL_META: Record<string, { icon: string; desc: string }> = {
   'Custom API': { icon: '🔗', desc: 'Connect any REST API with a URL + key' },
 };
 
+const TOOLS_GRID = [
+  { id: 'web_search',   icon: '🌐', name: 'Web Search',       desc: 'Search the web in real time for up-to-date information',            color: 'bg-blue-50' },
+  { id: 'db_lookup',    icon: '🗄️', name: 'Database Lookup',   desc: 'Query your database or vector store for internal knowledge',         color: 'bg-purple-50' },
+  { id: 'email',        icon: '📧', name: 'Email Sender',      desc: 'Send emails or notifications on behalf of the agent',               color: 'bg-red-50' },
+  { id: 'calendar',     icon: '📅', name: 'Calendar API',      desc: 'Read/write calendar events and schedule meetings',                  color: 'bg-green-50' },
+  { id: 'slack',        icon: '💬', name: 'Slack Webhook',     desc: 'Post messages and alerts to Slack channels',                       color: 'bg-yellow-50' },
+  { id: 'jira',         icon: '📋', name: 'Jira',              desc: 'Create and update Jira tickets automatically',                      color: 'bg-blue-50' },
+  { id: 'sheets',       icon: '📊', name: 'Google Sheets',     desc: 'Read from and write to spreadsheets',                              color: 'bg-green-50' },
+  { id: 'custom_fn',    icon: '⚙️', name: 'Custom Function',   desc: 'Define your own tool with a JSON schema',                          color: 'bg-gray-50' },
+];
+
+interface ToolConfig {
+  overview: string;
+  steps: string[];
+  tips: string[];
+}
+
+const TOOL_CONFIG_DATA: Record<string, ToolConfig> = {
+  web_search: {
+    overview: "Lets your agent search the live web for current information, news, and facts beyond its training cutoff.",
+    steps: ['Choose a search provider', 'Get your API key', 'Define the tool schema', 'Handle the tool call'],
+    tips: ['Limit to 3-5 results to save context tokens', "Include today's date so the model understands what 'recent' means", 'Add a domain blocklist to filter low-quality sources'],
+  },
+  db_lookup: {
+    overview: "Connect your agent to any database or vector store for retrieval-augmented generation (RAG) on private knowledge.",
+    steps: ['Set up your database or vector store', 'Create a read-only API endpoint or SDK client', 'Define the query schema', 'Return results in a structured format'],
+    tips: ['Always sanitize input to prevent injection attacks', 'Limit result count to keep context manageable', 'Add metadata to help the model filter results'],
+  },
+  email: {
+    overview: "Enable your agent to send emails or notifications using SendGrid, Mailgun, or SMTP.",
+    steps: ['Choose an email provider (SendGrid, Mailgun, SMTP)', 'Get your API credentials', 'Define the send schema (to, subject, body)', 'Test with a sandbox address first'],
+    tips: ['Always confirm recipient before sending in production', 'Use plain text fallback for HTML emails', 'Include unsubscribe links for marketing emails'],
+  },
+  calendar: {
+    overview: "Allow your agent to read and write calendar events using Google Calendar, Outlook, or CalDAV.",
+    steps: ['Enable the Calendar API in your provider dashboard', 'Generate OAuth credentials', 'Define read/write scopes', 'Handle timezone conversion carefully'],
+    tips: ['Always work in UTC internally, convert for display', 'Cache calendar events to reduce API calls', 'Handle conflicts gracefully with retry logic'],
+  },
+  slack: {
+    overview: "Send Slack messages and alerts to channels or DMs when your agent completes tasks or detects events.",
+    steps: ['Create a Slack app in your workspace', 'Add the incoming-webhooks or chat:write permission', 'Copy the webhook URL', 'Format messages with Block Kit for rich output'],
+    tips: ['Use threads to keep channel noise low', 'Mention users with @user only when action required', 'Batch notifications to avoid rate limits'],
+  },
+  jira: {
+    overview: "Create, update, and query Jira tickets automatically as your agent works through tasks.",
+    steps: ['Create an API token in your Atlassian account', 'Add JIRA_URL and JIRA_EMAIL env vars', 'Define the issue schema (project, type, summary)', 'Handle status transitions with the transitions API'],
+    tips: ['Use a dedicated bot account for cleaner audit trails', 'Store Jira IDs in memory for follow-up actions', 'Add watchers automatically for important tickets'],
+  },
+  sheets: {
+    overview: "Read from and write to Google Sheets or Excel for data processing and reporting tasks.",
+    steps: ['Enable the Sheets API in Google Cloud Console', 'Create a service account and download the key', 'Share the target spreadsheet with the service account', 'Use range notation (Sheet1!A1:C10) for reads/writes'],
+    tips: ['Batch writes to avoid quota limits', 'Name your ranges for readability', 'Always validate data types before writing'],
+  },
+  custom_fn: {
+    overview: "Define any tool your agent needs using a JSON schema — the model will call it automatically when appropriate.",
+    steps: ['Define your function schema with name, description, and parameters', 'Implement the function on your server', 'Register it in the tools array of your API call', 'Return results as structured JSON'],
+    tips: ['Write a clear description so the model knows when to call it', 'Use strict: true for reliable parameter validation', 'Include error handling and return error messages as strings'],
+  },
+};
+
 /* ─── Helpers ─── */
 
 function buildSystemPrompt(data: Step1Data): string {
@@ -169,6 +229,11 @@ export function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
 
   /* Step 3 */
   const [tools, setTools] = useState<ToolState[]>(INITIAL_TOOLS);
+  const [selectedToolFilter, setSelectedToolFilter] = useState<'All' | 'Connected' | 'Available' | 'Suggested'>('All');
+  const [checkedTools, setCheckedTools] = useState<Set<string>>(new Set(['web_search', 'db_lookup']));
+  const [configTool, setConfigTool] = useState<string | null>(null);
+  const [configTab, setConfigTab] = useState<'Overview' | 'Steps' | 'Config'>('Overview');
+  const [enableConfigTool, setEnableConfigTool] = useState(false);
 
   /* Step 4 */
   const [memory, setMemory] = useState<MemoryState>({
@@ -506,32 +571,162 @@ export function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
 
         {/* ─── STEP 3: TOOLS & APIs ─── */}
         {step === 3 && (
-          <div className="px-6 py-6">
-            <h3 className="font-bold text-[#1A1A1A] mb-1">Tools &amp; APIs</h3>
-            <p className="text-[13px] text-[#6B7280] mb-4">
-              Choose what your agent can access.
-            </p>
-            <div>
-              {tools.map((tool, idx) => {
-                const meta = TOOL_META[tool.name] ?? { icon: '🔧', desc: '' };
+          <>
+            {configTool ? (
+              /* ── Tool config sub-panel ── */
+              (() => {
+                const tool = TOOLS_GRID.find(t => t.id === configTool)!;
+                const cfg = TOOL_CONFIG_DATA[configTool]!;
                 return (
-                  <div
-                    key={tool.name}
-                    className="flex items-center justify-between py-3 border-b border-[#F5F4F0]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{meta.icon}</span>
-                      <div>
-                        <p className="font-semibold text-[#1A1A1A] text-[13px]">{tool.name}</p>
-                        <p className="text-[12px] text-[#6B7280]">{meta.desc}</p>
+                  <div className="px-6 py-5">
+                    {/* Sub-panel header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${tool.color}`}>
+                        {tool.icon}
                       </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-[#1A1A1A] text-[15px]">{tool.name}</p>
+                        <p className="text-[12px] text-[#6B7280]">Real-time access for your agent</p>
+                      </div>
+                      <button type="button" onClick={() => setConfigTool(null)} className="w-8 h-8 rounded-full bg-[#F5F4F0] flex items-center justify-center text-[#6B7280] hover:bg-[#E5E5E5]">✕</button>
                     </div>
-                    <Toggle enabled={tool.enabled} onChange={() => toggleTool(idx)} />
+
+                    {/* Tabs */}
+                    <div className="flex border-b border-[#E5E5E5] mb-5">
+                      {(['Overview', 'Steps', 'Config'] as const).map(tab => (
+                        <button key={tab} type="button" onClick={() => setConfigTab(tab)}
+                          className={`px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition ${configTab === tab ? 'border-[#E8521A] text-[#E8521A]' : 'border-transparent text-[#6B7280] hover:text-[#1A1A1A]'}`}>
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+
+                    {configTab === 'Overview' && (
+                      <div>
+                        {/* Tool card */}
+                        <div className={`flex items-start gap-3 ${tool.color} rounded-xl p-4 mb-5`}>
+                          <div className="text-2xl">{tool.icon}</div>
+                          <div>
+                            <p className="font-bold text-[#1A1A1A] text-[14px]">{tool.name}</p>
+                            <p className="text-[13px] text-[#374151] mt-1">{cfg.overview}</p>
+                          </div>
+                        </div>
+                        {/* Setup overview */}
+                        <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">Setup Overview</p>
+                        <div className="space-y-2 mb-5">
+                          {cfg.steps.map((s, i) => (
+                            <div key={i} className="flex items-center gap-3 border border-[#E5E5E5] rounded-xl px-4 py-3">
+                              <span className="w-6 h-6 rounded-full bg-[#F5F4F0] text-[#374151] text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i+1}</span>
+                              <span className="text-[13px] text-[#374151] font-medium">{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Pro tips */}
+                        <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">Pro Tips</p>
+                        <div className="space-y-2">
+                          {cfg.tips.map((tip, i) => (
+                            <div key={i} className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                              <span className="text-amber-500 text-base flex-shrink-0">💡</span>
+                              <span className="text-[12px] text-[#92400E]">{tip}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {configTab === 'Steps' && (
+                      <div className="space-y-3">
+                        {cfg.steps.map((s, i) => (
+                          <div key={i} className="flex gap-3 border border-[#E5E5E5] rounded-xl p-4">
+                            <span className="w-7 h-7 rounded-full bg-[#E8521A] text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">{i+1}</span>
+                            <div>
+                              <p className="font-semibold text-[#1A1A1A] text-[13px]">{s}</p>
+                              <p className="text-[12px] text-[#6B7280] mt-1">Follow the provider documentation to complete this step.</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {configTab === 'Config' && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">API Key</label>
+                          <input type="password" placeholder="Enter your API key..." className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] focus:outline-none focus:border-[#E8521A]/50 transition" />
+                        </div>
+                        <div>
+                          <label className="text-[13px] font-semibold text-[#1A1A1A] mb-1 block">Endpoint URL (optional)</label>
+                          <input type="url" placeholder="https://api.example.com" className="w-full border border-[#E5E5E5] rounded-xl px-4 py-2.5 text-[14px] focus:outline-none focus:border-[#E8521A]/50 transition" />
+                        </div>
+                        <div className="bg-[#F5F4F0] rounded-xl p-4">
+                          <p className="text-[12px] text-[#6B7280]">Config is saved locally and used when your agent calls this tool.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sub-panel footer */}
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#E5E5E5]">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={enableConfigTool} onChange={e => { setEnableConfigTool(e.target.checked); if (e.target.checked) setCheckedTools(prev => new Set([...prev, configTool])); else setCheckedTools(prev => { const n = new Set(prev); n.delete(configTool); return n; }); }} className="rounded accent-[#E8521A]" />
+                        <span className="text-[13px] font-medium text-[#374151]">Enable this tool</span>
+                      </label>
+                      <button type="button" onClick={() => setConfigTool(null)} className="bg-[#E8521A] text-white px-5 py-2.5 rounded-xl text-[13px] font-bold hover:bg-[#d04415] transition">Done</button>
+                    </div>
                   </div>
                 );
-              })}
-            </div>
-          </div>
+              })()
+            ) : (
+              /* ── Main tools grid ── */
+              <div className="px-6 py-5">
+                <p className="text-[13px] text-[#6B7280] mb-4">
+                  Equip your agent with tools: web search, database lookup, email sender, calendar API, Slack webhook. Click any tool to see configuration steps.
+                </p>
+
+                {/* Filter tabs */}
+                <div className="flex items-center gap-2 mb-4 flex-wrap">
+                  {(['All', 'Connected', 'Available', 'Suggested'] as const).map(f => (
+                    <button key={f} type="button" onClick={() => setSelectedToolFilter(f)}
+                      className={`px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition ${selectedToolFilter === f ? 'bg-[#1A1A1A] text-white' : 'border border-[#E5E5E5] text-[#6B7280] hover:border-[#1A1A1A]'}`}>
+                      {f}
+                    </button>
+                  ))}
+                  <button type="button" className="ml-auto border border-[#E5E5E5] rounded-full px-3 py-1.5 text-[12px] text-[#6B7280] hover:border-[#1A1A1A] transition">All categories ▼</button>
+                </div>
+
+                {/* 2-col grid */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {TOOLS_GRID.map(tool => (
+                    <div key={tool.id} className={`border rounded-xl p-3.5 transition ${checkedTools.has(tool.id) ? 'border-[#E8521A] bg-[#FFF8F5]' : 'border-[#E5E5E5] bg-white hover:border-[#9CA3AF]'}`}>
+                      <div className="flex items-start gap-2 mb-2">
+                        <input type="checkbox" checked={checkedTools.has(tool.id)} onChange={e => { const n = new Set(checkedTools); e.target.checked ? n.add(tool.id) : n.delete(tool.id); setCheckedTools(n); }} className="mt-0.5 accent-[#E8521A] flex-shrink-0" />
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0 ${tool.color}`}>{tool.icon}</div>
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-bold text-[#1A1A1A] leading-tight">{tool.name}</p>
+                          <p className="text-[11px] text-[#6B7280] leading-snug mt-0.5">{tool.desc}</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => { setConfigTool(tool.id); setConfigTab('Overview'); setEnableConfigTool(checkedTools.has(tool.id)); }}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-[#E8521A] hover:underline mt-1 ml-9">
+                        <span className="text-[10px]">🔗</span> How to configure →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add more tools */}
+                <button type="button" className="w-full border-2 border-dashed border-[#E5E5E5] rounded-xl py-3 text-[13px] font-medium text-[#6B7280] hover:border-[#E8521A] hover:text-[#E8521A] transition">
+                  + Add more tools
+                </button>
+
+                {/* Info banner */}
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                  <p className="text-[12px] text-blue-700 leading-relaxed">
+                    <strong>GPT-5.4, Claude Opus 4.6, Grok-4</strong> all support function calling — define tools in JSON schema and the model will invoke them automatically when needed.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* ─── STEP 4: MEMORY ─── */}

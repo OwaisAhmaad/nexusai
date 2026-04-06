@@ -206,7 +206,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="flex max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden">
+      <div className="flex max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
 
         {/* ── LEFT PANEL ── */}
         <div className="hidden sm:flex flex-col w-72 flex-shrink-0 bg-[#1C1917] p-8 rounded-l-2xl">
@@ -244,7 +244,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'signin', onSuccess }:
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="flex-1 bg-white rounded-r-2xl p-8 relative">
+        <div className="flex-1 bg-white rounded-r-2xl p-8 relative overflow-y-auto">
           {/* Close button */}
           <button
             type="button"
